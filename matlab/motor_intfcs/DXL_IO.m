@@ -677,31 +677,45 @@ classdef DXL_IO < handle
     %   (READ/WRITE, e.g. used by writeXByteTx)
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
     function [] = writeTxRx( obj, a_id, a_address, a_length )
+      obj.is_port_open( 'writeTxRx()' );  % assert a port is currently open
+      
       writeTxRx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address, a_length );
     end
     
     function [] = writeTxOnly( obj, a_id, a_address, a_length )
+      obj.is_port_open( 'writeTxOnly()' );  % assert a port is currently open
+      
       writeTxOnly( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address, a_length );
     end
     
     function [] = readTxRx( obj, a_id, a_address, a_length )
+      obj.is_port_open( 'readTxRx()' );  % assert a port is currently open
+      
       readTxRx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address, a_length );
     end
     
     function [] = readTx( obj, a_id, a_address, a_length )
+      obj.is_port_open( 'readTx()' );  % assert a port is currently open
+      
       readTx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address, a_length );
     end
 
     function [] = readRx( obj, a_length )
+      obj.is_port_open( 'readRx()' );  % assert a port is currently open
+      
       readRx( obj.port_hdl, obj.PROTOCOL_VERSION, a_length );
     end
     
     % ==== Bulk read/write ==== 
     function [] = bulkReadTx(obj, a_param_length )
+      obj.is_port_open( 'bulkReadTx()' );  % assert a port is currently open
+      
       bulkReadTx( obj.port_hdl, obj.PROTOCOL_VERSION, a_param_length );
     end
     
     function [] = bulkWriteTxOnly( obj, a_param_length )
+      obj.is_port_open( 'bulkWriteTxOnly()' );  % assert a port is currently open
+      
       bulkWriteTxOnly( obj.port_hdl, obj.PROTOCOL_VERSION, a_param_length );
     end
     
@@ -712,6 +726,8 @@ classdef DXL_IO < handle
     end
     
     function [] = syncWriteTxOnly( obj, a_start_address, a_data_length, a_param_length )
+      obj.is_port_open( 'syncWriteTxOnly()' );  % assert a port is currently open
+      
       syncWriteTxOnly( obj.port_hdl, obj.PROTOCOL_VERSION, a_start_address, a_data_length, a_param_length );
     end
     
@@ -720,24 +736,34 @@ classdef DXL_IO < handle
     %   (Packet send/receive, e.g. used by mid-level Tx/Rx methods)
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     function [] = txrxPacket( obj )
+      obj.is_port_open( 'txrxPacket()' );  % assert a port is currently open
+      
       txRxPacket( obj.port_hdl, obj.PROTOCOL_VERSION );
     end
     
     function [] = txPacket( obj )
+      obj.is_port_open( 'txPacket()' );  % assert a port is currently open
+      
       txPacket( obj.port_hdl, obj.PROTOCOL_VERSION );
     end
 
     function [] = rxPacket( obj )
+      obj.is_port_open( 'rxPacket()' );  % assert a port is currently open
+      
       rxPacket( obj.port_hdl, obj.PROTOCOL_VERSION );
     end
     
     %   Return current Rx data bytes (re-seuqenced) as single (multi-byte) value
     function [VALUE] = getDataRead(obj, a_data_length, a_data_pos )
+      obj.is_port_open( 'getDataRead()' );  % assert a port is currently open
+      
       VALUE = getDataRead( obj.port_hdl, obj.PROTOCOL_VERSION, a_data_length, a_data_pos );
     end
 
     %   Set current Tx data, specifying byte length (i.e. a_data_length)
     function [] = setDataWrite(obj, a_data_length, a_data_pos, a_data)
+      obj.is_port_open( 'setDataWrite()' );  % assert a port is currently open
+      
       setDataWrite( obj.port_hdl, obj.PROTOCOL_VERSION, a_data_length, a_data_pos, a_data );
     end
 
