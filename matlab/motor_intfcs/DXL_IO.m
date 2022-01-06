@@ -242,18 +242,26 @@ classdef DXL_IO < handle
     
     % ==== Basic/common motor capabilities ====
     function [] = ping( obj, a_id )
+      obj.is_port_open( 'ping()' );  % assert a port is currently open
+      
       ping( obj.port_hdl, obj.PROTOCOL_VERSION, a_id );
     end
     
     function [VALUE] = pingGetModelNum( obj, a_id )
+      obj.is_port_open( 'pingGetModelNum()' );  % assert a port is currently open
+      
       VALUE = pingGetModelNum( obj.port_hdl, obj.PROTOCOL_VERSION, a_id );
     end
     
     function [] = broadcastPing( obj )
+      obj.is_port_open( 'broadcastPing()' );  % assert a port is currently open
+      
       broadcastPing( obj.port_hdl, obj.PROTOCOL_VERSION );
     end
     
     function [VALUE] = getBroadcastPingResult( obj, a_id )
+      obj.is_port_open( 'getBroadcastPingResult()' );  % assert a port is currently open
+      
       VALUE = getBroadcastPingResult( obj.port_hdl, obj.PROTOCOL_VERSION, a_id );
     end
     
@@ -265,6 +273,8 @@ classdef DXL_IO < handle
     % Input(s):
     %   a_id:             motor ID
     function [] = clearMultiTurn( obj, a_id )
+      obj.is_port_open( 'clearMultiTurn()' );  % assert a port is currently open
+      
       clearMultiTurn( obj.port_hdl, obj.PROTOCOL_VERSION, a_id );
     end
     
@@ -276,6 +286,8 @@ classdef DXL_IO < handle
     %                     (0x01) Reset all except ID, 
     %                     (0x02) Reset all except ID and Baudrate
     function [] = factoryReset( obj, a_id, a_option )
+      obj.is_port_open( 'factoryReset()' );  % assert a port is currently open
+      
       factoryReset( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_option );
     end
 
@@ -284,6 +296,8 @@ classdef DXL_IO < handle
     % Input(s):
     %   a_id:             motor ID
     function [] = reboot( obj, a_id )
+      obj.is_port_open( 'reboot()' );  % assert a port is currently open
+      
       reboot( obj.port_hdl, obj.PROTOCOL_VERSION, a_id );
     end
     
@@ -291,6 +305,8 @@ classdef DXL_IO < handle
     %   Last Tx/Rx comm. result (i.e. COMM_*)
     % TODO: assert port open
     function [VALUE] = getLastTxRxResult( obj )
+      obj.is_port_open( 'getLastTxRxResult()' );  % assert a port is currently open
+      
       VALUE = getLastTxRxResult( obj.port_hdl, obj.PROTOCOL_VERSION );
     end
     
@@ -301,6 +317,8 @@ classdef DXL_IO < handle
 
     %   Last Rx packet error (i.e. ERRRBIT_*)
     function [VALUE] = getLastRxPacketError( obj )
+      obj.is_port_open( 'getLastRxPacketError()' );  % assert a port is currently open
+      
       VALUE = getLastRxPacketError( obj.port_hdl, obj.PROTOCOL_VERSION );
     end
 
@@ -312,68 +330,98 @@ classdef DXL_IO < handle
     % ==== Read motor data ==== 
     %   READ 1 byte
     function [VALUE] = read1ByteTxRx( obj, a_id, a_address )
+      obj.is_port_open( 'read1ByteTxRx()' );  % assert a port is currently open
+      
       VALUE = read1ByteTxRx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address );
     end
 
     function [] = read1ByteTx( obj, a_id, a_address )
+      obj.is_port_open( 'read1ByteTx()' );  % assert a port is currently open
+      
       read1ByteTx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address );
     end
     
     function [VALUE] = read1ByteRx( obj )
+      obj.is_port_open( 'read1ByteRx()' );  % assert a port is currently open
+      
       VALUE = read1ByteRx( obj.port_hdl, obj.PROTOCOL_VERSION );
     end
 
     %   READ 2 bytes
     function [VALUE] = read2ByteTxRx( obj, a_id, a_address )
+      obj.is_port_open( 'read2ByteTxRx()' );  % assert a port is currently open
+      
       VALUE = read2ByteTxRx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address );
     end
     
     function [] = read2ByteTx( obj, a_id, a_address )
+      obj.is_port_open( 'read2ByteTx()' );  % assert a port is currently open
+      
       read2ByteTx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address );
     end
         
     function [VALUE] = read2ByteRx( obj )
+      obj.is_port_open( 'read2ByteRx()' );  % assert a port is currently open
+      
       VALUE = read2ByteRx( obj.port_hdl, obj.PROTOCOL_VERSION );
     end
 
     %   READ 4 byte
     function [VALUE] = read4ByteTxRx( obj, a_id, a_address )
+      obj.is_port_open( 'read4ByteTxRx()' );  % assert a port is currently open
+      
       VALUE = read4ByteTxRx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address );
     end
     
     function [] = read4ByteTx( obj, a_id, a_address )
+      obj.is_port_open( 'read4ByteTx()' );  % assert a port is currently open
+      
       read4ByteTx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address );
     end
     
     function [VALUE] = read4ByteRx( obj )
+      obj.is_port_open( 'read4ByteRx()' );  % assert a port is currently open
+      
       VALUE = read4ByteRx( obj.port_hdl, obj.PROTOCOL_VERSION );
     end
     
     % ==== Write motor data ==== 
     %   WRITE 1 byte
     function [] = write1ByteTxRx( obj, a_id, a_address, a_data )
+      obj.is_port_open( 'write1ByteTxRx()' );  % assert a port is currently open
+      
       write1ByteTxRx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address, a_data );
     end
     
     function [] = write1ByteTxOnly( obj, a_id, a_address, a_data )
+      obj.is_port_open( 'write1ByteTxOnly()' );  % assert a port is currently open
+      
       write1ByteTxOnly( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address, a_data );
     end
    
     %   WRITE 2 bytes
     function [] = write2ByteTxRx( obj, a_id, a_address, a_data )
+      obj.is_port_open( 'write2ByteTxRx()' );  % assert a port is currently open
+      
       write2ByteTxRx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address, a_data );
     end
     
     function [] = write2ByteTxOnly( obj, a_id, a_address, a_data )
+      obj.is_port_open( 'write2ByteTxOnly()' );  % assert a port is currently open
+      
       write2ByteTxOnly( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address, a_data );
     end
     
     %   WRITE 4 bytes
     function [] = write4ByteTxRx( obj, a_id, a_address, a_data )
+      obj.is_port_open( 'write4ByteTxRx()' );  % assert a port is currently open
+      
       write4ByteTxRx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address, a_data );
     end
     
     function [] = write4ByteTxOnly( obj, a_id, a_address, a_data )
+      obj.is_port_open( 'write4ByteTxOnly()' );  % assert a port is currently open
+      
       write4ByteTxOnly( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address, a_data );
     end
     
@@ -381,10 +429,14 @@ classdef DXL_IO < handle
     %   (synchronized execution by multiple motors upon send/receipt 
     %     of ACTION instruction)
     function [] = regWriteTxOnly( obj, a_id, a_address, a_length )
+      obj.is_port_open( 'regWriteTxOnly()' );  % assert a port is currently open
+      
       regWriteTxOnly( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address, a_length );
     end
     
     function [] = regWriteTxRx( obj, a_id, a_address, a_length )
+      obj.is_port_open( 'regWriteTxRx()' );  % assert a port is currently open
+      
       regWriteTxRx( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_address, a_length );
     end
     
@@ -420,6 +472,8 @@ classdef DXL_IO < handle
     
     %   Create read group and initialize read group-associated structs
     function [group_id] = groupSyncRead( obj, a_start_addresss, a_data_length )
+      obj.is_port_open( 'groupSyncRead()' );  % assert a port is currently open
+      
       group_id = groupSyncRead( obj.port_hdl, obj.PROTOCOL_VERSION, a_start_addresss, a_data_length );
     end
     
@@ -485,9 +539,31 @@ classdef DXL_IO < handle
       
       obj.groupSyncWriteClearParam( group_id );        % clear write group data (permits group ID re-use)
     end
+%     function [] = groupSyncWriteAddr( obj, a_motor_ids, a_data, a_start_addresss, a_data_length )
+%       group_id = obj.groupSyncWrite( a_start_addresss, a_data_length );
+% 
+%       % Add motor IDs to write group
+%       for ii = 1:length(a_motor_ids)
+%         if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), a_data(ii), int32(a_data_length) ) )
+%           error('[DXL_IO::groupSyncWriteAddr()] Motor data failed to be added to write group (%d) ...', a_motor_ids(ii));
+%         end
+%       end
+%       
+%       obj.groupSyncWriteTxPacket( group_id );
+%       
+%       % TODO: check TxRxResult (optional)?
+%       dxl_comm_result = obj.getLastTxRxResult();
+%       if dxl_comm_result ~= obj.COMM_TXSUCCESS
+%           fprintf('Comm. error: %s\n', obj.getTxRxResult(dxl_comm_result));
+%       end
+%       
+%       obj.groupSyncWriteClearParam( group_id );        % clear write group data (permits group ID re-use)
+%     end
     
     %   Create write group and initialize write group-associated structs
     function [group_id] = groupSyncWrite( obj, a_start_addresss, a_data_length )
+      obj.is_port_open( 'groupSyncWrite()' );  % assert a port is currently open
+      
       group_id = groupSyncWrite( obj.port_hdl, obj.PROTOCOL_VERSION, a_start_addresss, a_data_length );
     end
     
@@ -520,6 +596,8 @@ classdef DXL_IO < handle
     % TODO: Add wrapper functions for group_bulk_write and group_bulk__read
     % Create read group and initialize read group-associated structs
     function [group_id] = groupBulkRead( obj )
+      obj.is_port_open( 'groupBulkRead()' );  % assert a port is currently open
+      
       group_id = groupBulkRead( obj.port_hdl, obj.PROTOCOL_VERSION );
     end
     
@@ -563,6 +641,8 @@ classdef DXL_IO < handle
     % ==== Group Bulk write ====
     %   Create write group and initialize write group-associated structs
     function [group_id] = groupBulkWrite( obj )
+      obj.is_port_open( 'groupBulkWrite()' );  % assert a port is currently open
+      
       group_id = groupBulkWrite( obj.port_hdl, obj.PROTOCOL_VERSION );
     end
     
