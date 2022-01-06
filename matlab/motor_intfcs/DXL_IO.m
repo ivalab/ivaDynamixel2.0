@@ -181,7 +181,7 @@ classdef DXL_IO < handle
       obj.port_open = false;
     end
 
-    function [VALUE] = portHandler(obj, a_port_dev )    % TODO: private
+    function [VALUE] = portHandler(obj, a_port_dev )    % TODO: protected
       VALUE = portHandler( a_port_dev );
     end
 
@@ -239,6 +239,8 @@ classdef DXL_IO < handle
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Dynamixel high-level motor interface (e.g. packet construction, Tx/Rx)
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    % ==== Basic/common motor capabilities ====
     function [] = ping( obj, a_id )
       ping( obj.port_hdl, obj.PROTOCOL_VERSION, a_id );
     end
@@ -255,15 +257,32 @@ classdef DXL_IO < handle
       VALUE = getBroadcastPingResult( obj.port_hdl, obj.PROTOCOL_VERSION, a_id );
     end
     
-    % ########### Motor basics ###########      % TODO: may need to move into sub-class
-    function [] = clearMultiTurn( obj, a_id )       % TODO: delineate control table capabilities into motor classes
+    % Reset the present position control table value to absolute value 
+    % within one rotation
+    %   Applied products: MX with DYNAMIXEL Protocol 2.0 (Firmware v42 or above), 
+    %                     DYNAMIXEL-X series (Firmware v42 or above)
+    %
+    % Input(s):
+    %   a_id:             motor ID
+    function [] = clearMultiTurn( obj, a_id )
       clearMultiTurn( obj.port_hdl, obj.PROTOCOL_VERSION, a_id );
     end
     
+    % Reset motor control table to default factory settings
+    %
+    % Input(s):
+    %   a_id:             motor ID
+    %   a_option:         (0xFF) Reset all, 
+    %                     (0x01) Reset all except ID, 
+    %                     (0x02) Reset all except ID and Baudrate
     function [] = factoryReset( obj, a_id, a_option )
       factoryReset( obj.port_hdl, obj.PROTOCOL_VERSION, a_id, a_option );
     end
 
+    % Reboot motor
+    %
+    % Input(s):
+    %   a_id:             motor ID
     function [] = reboot( obj, a_id )
       reboot( obj.port_hdl, obj.PROTOCOL_VERSION, a_id );
     end
@@ -373,7 +392,6 @@ classdef DXL_IO < handle
     % NOTE(s): Once created, each group ID cannot be removed and is 
     % associated with a specified 'start' destination register address and 
     % data length (i.e. # bytes to read/write)
-    % TODO: Add wrapper functions for sync_write (derived from matlab/m_basic_function/group_sync_write/ & group_sync_read/)and sync_read
 
     % NOTE(s): Currently limited to reading one register address at a time
     % [TODO: extend to read multiple consecutive register addresses (i.e. 
