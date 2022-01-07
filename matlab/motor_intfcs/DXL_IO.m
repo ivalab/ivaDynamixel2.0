@@ -54,6 +54,17 @@ classdef DXL_IO < handle
     COMM_RXWAITING  = 5;
     COMM_RXTIMEOUT  = 6;
     COMM_RXCORRUPT  = 7;
+    
+    MODEL_NUM2NAME = containers.Map( [12, 300, 18, 10, 24, 28, 64, 107, 104, 29, ...
+                                      30, 310, 311, 320, 321, 350, 1060, 1030, 1020, 1130, ...
+                                      1120, 1050, 1040, 1010, 1000, 35072, 37928, 37896, 38176, 38152, ...
+                                      43288, 46096, 46352, 51200, 53768, 54024, 2000, 2010, 2020], ...
+                                      {'AX_12A', 'AX_12W', 'AX_18A', 'RX_10', 'RX_24F', 'RX_28', 'RX_64', 'EX_106', 'MX_12W', 'MX_28', ...
+                                       'MX_28_2', 'MX_64', 'MX_64_2', 'MX_106', 'MX_106_2', 'XL_320', 'XL430_W250', 'XM430_W210', 'XM430_W350', 'XM540_W150', ...
+                                       'XM540_W270', 'XH430_V210', 'XH430_V350', 'XH430_W210', 'XH430_W350', 'PRO_L42_10_S300_R', 'PRO_L54_30_S400_R', 'PRO_L54_30_S500_R', 'PRO_L54_50_S290_R', 'PRO_L54_50_S500_R', ...
+                                       'PRO_M42_10_S260_R', 'PRO_M54_40_S250_R', 'PRO_M54_60_S250_R', 'PRO_H42_20_S300_R', 'PRO_H54_100_S500_R', 'PRO_H54_200_S500_R', 'PRO_PLUS_H42P_020_S300_R', 'PRO_PLUS_H54P_100_S500_R', 'PRO_PLUS_H54P_200_S500_R'});
+    BAUDRATE_ENC2RATE = containers.Map( [0, 1, 2, 3, 4, 5, 6, 7], ...
+                                        [9600, 57600, 115200, 1000000, 2000000, 3000000, 4000000, 4500000]);
   end
   
   properties  (Abstract, Access = protected)
@@ -530,7 +541,7 @@ classdef DXL_IO < handle
       end
       
       obj.groupSyncWriteTxPacket( group_id );
-      
+        
       % TODO: check TxRxResult (optional)?
       dxl_comm_result = obj.getLastTxRxResult();
       if dxl_comm_result ~= obj.COMM_TXSUCCESS
@@ -539,26 +550,6 @@ classdef DXL_IO < handle
       
       obj.groupSyncWriteClearParam( group_id );        % clear write group data (permits group ID re-use)
     end
-%     function [] = groupSyncWriteAddr( obj, a_motor_ids, a_data, a_start_addresss, a_data_length )
-%       group_id = obj.groupSyncWrite( a_start_addresss, a_data_length );
-% 
-%       % Add motor IDs to write group
-%       for ii = 1:length(a_motor_ids)
-%         if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), a_data(ii), int32(a_data_length) ) )
-%           error('[DXL_IO::groupSyncWriteAddr()] Motor data failed to be added to write group (%d) ...', a_motor_ids(ii));
-%         end
-%       end
-%       
-%       obj.groupSyncWriteTxPacket( group_id );
-%       
-%       % TODO: check TxRxResult (optional)?
-%       dxl_comm_result = obj.getLastTxRxResult();
-%       if dxl_comm_result ~= obj.COMM_TXSUCCESS
-%           fprintf('Comm. error: %s\n', obj.getTxRxResult(dxl_comm_result));
-%       end
-%       
-%       obj.groupSyncWriteClearParam( group_id );        % clear write group data (permits group ID re-use)
-%     end
     
     %   Create write group and initialize write group-associated structs
     function [group_id] = groupSyncWrite( obj, a_start_addresss, a_data_length )

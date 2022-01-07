@@ -155,9 +155,92 @@ classdef XM430_W350_IO < DXL_IO
       obj@DXL_IO(); 
       
     end
+
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Status'ing
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    % Read and report motor HW information
+    %
+    % Input(s):
+    %   a_motor_ids:      vector of motor IDs to read data from
+    %
+    %   TODO: handle comm. failures (for 1+ motor ids)
+    function [ motor_status_str ] = get_motor_hw_info( obj, a_motor_ids, a_print_info )
+      if ( nargin < 3 )
+        a_print_info = false;
+      end
+      
+      [ result_model_nums ] = obj.get_model_number( a_motor_ids );
+%       [ result_model_infos ] = obj.get_model_info( a_motor_ids );     % Not used
+      [ result_firmware_vers ] = obj.get_firmware_ver( a_motor_ids );
+      
+      motor_status_str = cell(size(a_motor_ids));
+      for ii = 1:length(a_motor_ids)
+        motor_status_str{ii} = sprintf('Motor ID: %d \n\t Model Number: %d (%s)\n\t Firmware Version: %d\n', ...
+                                    a_motor_ids(ii), result_model_nums(ii), ...
+                                    obj.MODEL_NUM2NAME(result_model_nums(ii)), result_firmware_vers(ii));
+      end
+      
+      if ( a_print_info )
+        fprintf('MOTOR SUMMARY:\n#################\n');
+        for ii = 1:length(motor_status_str)
+          fprintf('%s\n', motor_status_str{ii});
+        end
+        fprintf('\n');
+      end
+    end
+    
+    % Read and report motor EEPROM control table fields
+    %
+    % Input(s):
+    %   a_motor_ids:      vector of motor IDs to read data from
+    %
+    %   TODO: handle comm. failures (for 1+ motor ids)
+    function [ motor_status_str ] = get_motor_eeprom_state( obj, a_motor_ids, a_print_info )
+      if ( nargin < 3 )
+        a_print_info = false;
+      end
+      
+      [ result_baudrates ] = obj.get_baud_rate( a_motor_ids );
+      [ result_delaytimes ] = obj.get_return_delay_time( a_motor_ids );
+      [ result_drivemode ] = obj.get_drive_mode( a_motor_ids );
+      [ result_opmode ] = obj.get_operating_mode( a_motor_ids );
+      [ result_secid ] = obj.get_secondary_id( a_motor_ids );
+      [ result_commtype ] = obj.get_comm_protocol( a_motor_ids );
+      [ result_homingoffset ] = obj.get_homing_offset( a_motor_ids );
+      [ result_movethresh ] = obj.get_moving_threshold( a_motor_ids );
+      [ result_templim ] = obj.get_temperature_limit( a_motor_ids );
+      [ result_maxvoltlim ] = obj.get_max_voltage_limit( a_motor_ids );
+      [ result_minvoltlim ] = obj.get_min_voltage_limit( a_motor_ids );
+      [ result_pwmlim ] = obj.get_pwm_limit( a_motor_ids );
+      [ result_currentlim ] = obj.get_current_limit( a_motor_ids );
+      [ result_vellim ] = obj.get_velocity_limit( a_motor_ids );
+      [ result_maxposlim ] = obj.get_max_position_limit( a_motor_ids );
+      [ result_minposlim ] = obj.get_min_position_limit( a_motor_ids );
+      [ result_startup_configs ] = obj.get_startup_configuration( a_motor_ids );
+      [ result_shutdownconfigs ] = obj.get_shutdown_configuration( a_motor_ids );
+      
+      motor_status_str = cell(size(a_motor_ids));
+      for ii = 1:length(a_motor_ids)
+        motor_status_str{ii} = sprintf('Motor ID: %d \n\t Model Number: %d (%s)\n\t Firmware Version: %d\n', ...
+                                    a_motor_ids(ii), result_model_nums(ii), ...
+                                    obj.MODEL_NUM2NAME(result_model_nums(ii)), result_firmware_vers(ii));
+      end
+      
+      if ( a_print_info )
+        fprintf('MOTOR SUMMARY:\n#################\n');
+        for ii = 1:length(motor_status_str)
+          fprintf('%s\n', motor_status_str{ii});
+        end
+        fprintf('\n');
+      end
+    end
+    
     
     % TODO: motor calibration procedure (i.e. read motor bias)
 
+    
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Control Table EEPROM Area: Write/set methods
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -252,12 +335,14 @@ classdef XM430_W350_IO < DXL_IO
     %
     % Input(s):
     %   a_motor_ids:  vector of motor IDs to configure
-    %   a_pos_offset:  vector of LED on/off values (1, 0)
+    %   a_pos_offset:  vector of position offset values (0 - 2*pi rad)
     function set_homing_offset( obj, a_motor_ids, a_pos_offset )
       assert( (length(a_pos_offset) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_homing_offset()]: Incompatible input vector lengths!');
       
-      obj.groupSyncWriteAddr( a_motor_ids, a_pos_offset, obj.ADDR_HOMING_OFFSET, obj.LEN_HOMING_OFFSET );
+      pos_offset_cnt = floor(a_pos_offset/obj.ENC_TO_RAD);
+            
+      obj.groupSyncWriteAddr( a_motor_ids, pos_offset_cnt, obj.ADDR_HOMING_OFFSET, obj.LEN_HOMING_OFFSET );
     end
 
     % Set motor moving threshold
@@ -417,6 +502,9 @@ classdef XM430_W350_IO < DXL_IO
     %
     % Input(s):
     %   a_motor_ids:      vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:           vector of motor model numbers (decode /w DXL_IO.MODEL_NUM2NAME map)  
     function [ result ] = get_model_number( obj, a_motor_ids )
       [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_MODEL_NUMBER, obj.LEN_MODEL_NUMBER);
 
@@ -427,6 +515,9 @@ classdef XM430_W350_IO < DXL_IO
     %
     % Input(s):
     %   a_motor_ids:      vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:           vector of model info values (not used)  
     function [ result ] = get_model_info( obj, a_motor_ids )
       [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_MODEL_INFORMATION, obj.LEN_MODEL_INFORMATION);
 
@@ -437,13 +528,266 @@ classdef XM430_W350_IO < DXL_IO
     %
     % Input(s):
     %   a_motor_ids:      vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:           vector of firmware versions
     function [ result ] = get_firmware_ver( obj, a_motor_ids )
       [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_FIRMWARE_VERSION, obj.LEN_FIRMWARE_VERSION);
 
       result = groupSyncReadData;
     end
+    
+    % Read motor ID
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of motor IDs
+    function [ result ] = get_id( obj, a_motor_ids )     
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_ID, obj.LEN_ID );
 
-    % TODO: remaining read/get methods are non-urgent
+      result = groupSyncReadData;
+    end
+
+    % Read motor baud rate
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of baud rate integer values (decode /w DXL_IO.BAUDRATE_ENC2RATE map) 
+    function [ result ] = get_baud_rate( obj, a_motor_ids )      
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_BAUD_RATE, obj.LEN_BAUD_RATE );
+
+      result = -1*ones(size(groupSyncReadData));
+      for ii = 1:length(groupSyncReadData)
+        result(ii) = obj.BAUDRATE_ENC2RATE(groupSyncReadData(ii));
+      end      
+    end
+
+    % Read motor return delay time
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of delay times (0 - 508 usec)
+    function [ result ] = get_return_delay_time( obj, a_motor_ids )      
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_RETURN_DELAY_TIME, obj.LEN_RETURN_DELAY_TIME );
+
+      result = groupSyncReadData*508/254;
+    end
+
+    % Read motor drive mode flags
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of drive mode flags (8-bit flag)
+    function [ result ] = get_drive_mode( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_DRIVE_MODE, obj.LEN_DRIVE_MODE );
+
+      result = groupSyncReadData;
+    end
+
+    % Read motor operating mode value
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of operating mode values (0, 1, 3, 4, 5 or 16)
+    function [ result ] = get_operating_mode( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_OPERATING_MODE, obj.LEN_OPERATING_MODE );
+
+      result = groupSyncReadData;
+    end
+
+    % Read motor secondary ID
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of motor IDs
+    function [ result ] = get_secondary_id( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_SECONDARY_ID, obj.LEN_SECONDARY_ID );
+
+      result = groupSyncReadData;
+    end
+
+    % Read motor communication protocol type
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of DXL communication protocol types (1 or 2)
+    function [ result ] = get_comm_protocol( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_PROTOCOL_TYPE, obj.LEN_PROTOCOL_TYPE );
+
+      result = groupSyncReadData;
+    end
+
+    % Read motor homing offset
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of position offset values (0 - 2*pi rad)
+    function [ result ] = get_homing_offset( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_HOMING_OFFSET, obj.LEN_HOMING_OFFSET );
+
+      result = groupSyncReadData*obj.ENC_TO_RAD;
+    end
+
+    % Read motor moving threshold
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of moving threshold speeds (0.0+ rad/sec)
+    function [ result ] = get_moving_threshold( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_MOVING_THRESHOLD, obj.LEN_MOVING_THRESHOLD );
+
+      result = groupSyncReadData*obj.ENC_TO_RAD;
+    end
+
+    % Read motor temperature limit
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of temperature limits (0 - 100 deg C; increments of 1 deg)
+    function [ result ] = get_temperature_limit( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_TEMPERATURE_LIMIT, obj.LEN_TEMPERATURE_LIMIT );
+
+      result = groupSyncReadData;
+    end
+
+    % Read motor max. voltage limit
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of max. voltage limits (9.5 - 16.0 V)
+    function [ result ] = get_max_voltage_limit( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_MAX_VOLTAGE_LIMIT, obj.LEN_MAX_VOLTAGE_LIMIT );
+
+      result = groupSyncReadData/10;
+    end
+
+    % Read motor min. voltage limit
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of max. voltage limits (9.5 - 16.0 V)
+    function [ result ] = get_min_voltage_limit( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_MIN_VOLTAGE_LIMIT, obj.LEN_MIN_VOLTAGE_LIMIT );
+
+      result = groupSyncReadData/10;
+    end
+
+    % Read motor PWM duty cycle limit
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of PWM duty cycle limits (0 - 100%)
+    function [ result ] = get_pwm_limit( obj, a_motor_ids )
+      duty_cycle_limit_cnt = floor(a_duty_cycle_limit*855/100);
+
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_PWM_LIMIT, obj.LEN_PWM_LIMIT );
+
+      result = groupSyncReadData*100/855;
+    end
+
+    % Read motor current limit
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of current limits (0 - 3209 mA)
+    function [ result ] = get_current_limit( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_CURRENT_LIMIT, obj.LEN_CURRENT_LIMIT );
+
+      result = groupSyncReadData*2.69;
+    end
+
+    % Read motor velocity limit
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of velocity limit values (0 - 24 rad/sec)
+    function [ result ] = get_velocity_limit( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_VELOCITY_LIMIT, obj.LEN_VELOCITY_LIMIT );
+
+      result = groupSyncReadData*(0.229*2*pi/60);
+    end
+
+    % Read motor max. position limit
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of max. position limits (0 - 2*pi rad)
+    function [ result ] = get_max_position_limit( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_MAX_POSITION_LIMIT, obj.LEN_MAX_POSITION_LIMIT );
+
+      result = groupSyncReadData*obj.ENC_TO_RAD;
+    end
+
+    % Read motor min. position limit
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of min. position limits (0 - 2*pi rad)
+    function [ result ] = get_min_position_limit( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_MIN_POSITION_LIMIT, obj.LEN_MIN_POSITION_LIMIT );
+
+      result = groupSyncReadData*obj.ENC_TO_RAD;
+    end
+
+    % Read motor start-up configuration flags
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of start-up configuration flags (0 - 3; 8-bit flag)
+    function [ result ] = get_startup_configuration( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_STARTUP_CONFIGURATION, obj.LEN_STARTUP_CONFIGURATION );
+
+      result = groupSyncReadData;
+    end
+
+    % Read motor shutdown condition flags
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:       vector of shutdown configuration flags (8-bit flag)
+    function [ result ] = get_shutdown_configuration( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_SHUTDOWN, obj.LEN_SHUTDOWN );
+
+      result = groupSyncReadData;
+    end
 
 
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -650,7 +994,7 @@ classdef XM430_W350_IO < DXL_IO
     %
     % Input(s):
     %   a_motor_ids:  vector of motor IDs to configure
-    %   a_pos:  vector of position values (0 - 4095)
+    %   a_pos:  vector of position values (0 - 2*pi rad)
     function set_goal_position( obj, a_motor_ids, a_pos )
       assert( (length(a_pos) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_goal_pos()]: Incompatible input vector lengths!');
