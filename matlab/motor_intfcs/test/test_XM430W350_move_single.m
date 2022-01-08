@@ -6,6 +6,9 @@
 % 
 
 % [0] == Script parameter(s)
+PORT_NAME = '/dev/ttyUSB7';
+PORT_BAUD = 1000000;
+
 MOTOR_ID = 12;
 
 
@@ -17,17 +20,17 @@ addpath('../');
 % [2] == Instantiate & exercise base functionality
 %   Setup
 dxlio = XM430_W350_IO();
+fprintf('\n');
 
 fprintf('Loading DXL library.\n\n');
 dxlio.load_library();
 
-port_name = '/dev/ttyUSB7';
-port_baud = 1000000;
-fprintf('Opening port: %s at baud: %d.... \n', port_name, port_baud);
-openPortResult = dxlio.openPort( port_name, port_baud );
+fprintf('Opening port: %s at baud: %d.... \n', PORT_NAME, PORT_BAUD);
+openPortResult = dxlio.openPort( PORT_NAME, PORT_BAUD );
 fprintf('Open port success: %d.\n\n', openPortResult);
 
 %   Ping motor
+fprintf('Pinging target motor ...\n');
 ping_result = dxlio.pingGetModelNum( MOTOR_ID );
 if ( ~ping_result )
   fprintf('\nPing result -> no response!');
@@ -49,7 +52,7 @@ dxlio.set_goal_position( MOTOR_ID, goal_pos );
 pause(3);
 
 %   Clean-up
-fprintf('Closing DXL port: %s.\n', port_name);
+fprintf('Closing DXL port: %s.\n', PORT_NAME);
 dxlio.closePort();
 fprintf('Unloading DXL library.\n');
 dxlio.unload_library();

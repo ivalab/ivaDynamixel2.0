@@ -157,13 +157,16 @@ classdef XM430_W350_IO < DXL_IO
     end
 
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Status'ing
+    % Motor reports
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     
     % Read and report motor HW information
     %
     % Input(s):
     %   a_motor_ids:      vector of motor IDs to read data from
+    %
+    % Output(s):
+    %   result:           string summary of motor HW information  
     %
     %   TODO: handle comm. failures (for 1+ motor ids)
     function [ motor_status_str ] = get_motor_hw_info( obj, a_motor_ids, a_print_info )
@@ -183,11 +186,11 @@ classdef XM430_W350_IO < DXL_IO
       end
       
       if ( a_print_info )
-        fprintf('MOTOR SUMMARY:\n#################\n');
+        fprintf('MOTOR HW SUMMARY:\n#################\n\n');
         for ii = 1:length(motor_status_str)
           fprintf('%s\n', motor_status_str{ii});
         end
-        fprintf('\n');
+        fprintf('#################\n\n');
       end
     end
     
@@ -195,6 +198,9 @@ classdef XM430_W350_IO < DXL_IO
     %
     % Input(s):
     %   a_motor_ids:      vector of motor IDs to read data from
+    % 
+    % Output(s):
+    %   result:           string summary of motor EEPROM control table state
     %
     %   TODO: handle comm. failures (for 1+ motor ids)
     function [ motor_status_str ] = get_motor_eeprom_state( obj, a_motor_ids, a_print_info )
@@ -223,23 +229,37 @@ classdef XM430_W350_IO < DXL_IO
       
       motor_status_str = cell(size(a_motor_ids));
       for ii = 1:length(a_motor_ids)
-        motor_status_str{ii} = sprintf('Motor ID: %d \n\t Model Number: %d (%s)\n\t Firmware Version: %d\n', ...
-                                    a_motor_ids(ii), result_model_nums(ii), ...
-                                    obj.MODEL_NUM2NAME(result_model_nums(ii)), result_firmware_vers(ii));
+        motor_status_str{ii} = sprintf('Motor ID: %d \n', a_motor_ids(ii));
+        
+        motor_status_str{ii} = sprintf('%s\t Baud Rate: %d bps\n', motor_status_str{ii}, result_baudrates(ii));
+        motor_status_str{ii} = sprintf('%s\t Return Delay Time: %.2f us\n', motor_status_str{ii}, result_delaytimes(ii));
+        motor_status_str{ii} = sprintf('%s\t Drive Mode: %s [8-bit flag]\n', motor_status_str{ii}, dec2bin(result_drivemode(ii), 8));
+        motor_status_str{ii} = sprintf('%s\t Operating Mode: %s [8-bit flag]\n', motor_status_str{ii}, dec2bin(result_opmode(ii), 8));
+        motor_status_str{ii} = sprintf('%s\t Secondary ID: %d\n', motor_status_str{ii}, result_secid(ii));
+        motor_status_str{ii} = sprintf('%s\t DXL Comm. Protocol: %.1f\n', motor_status_str{ii}, result_commtype(ii));
+        motor_status_str{ii} = sprintf('%s\t Homing Offset: %.4f rad (%.3f deg)\n', motor_status_str{ii}, result_homingoffset(ii), result_homingoffset(ii)*180/pi);
+        motor_status_str{ii} = sprintf('%s\t Moving Threshold: %.4f rad (%.3f deg)\n', motor_status_str{ii}, result_movethresh(ii), result_movethresh(ii)*180/pi);
+        motor_status_str{ii} = sprintf('%s\t Temperature Limit: %.2f deg C\n', motor_status_str{ii}, result_templim(ii));
+        motor_status_str{ii} = sprintf('%s\t Max. Voltage Limit: %.2f V\n', motor_status_str{ii}, result_maxvoltlim(ii));
+        motor_status_str{ii} = sprintf('%s\t Min. Voltage Limit: %.2f V\n', motor_status_str{ii}, result_minvoltlim(ii));
+        motor_status_str{ii} = sprintf('%s\t PWM Duty Cycle Limit: %.2f%%\n', motor_status_str{ii}, result_pwmlim(ii));
+        motor_status_str{ii} = sprintf('%s\t Current Limit: %.2f mA\n', motor_status_str{ii}, result_currentlim(ii));
+        motor_status_str{ii} = sprintf('%s\t Velocity Limit: %.4f rad/sec (%.3f deg/sec)\n', motor_status_str{ii}, result_vellim(ii), result_vellim(ii)*180/pi);
+        motor_status_str{ii} = sprintf('%s\t Max. Position Limit: %.4f rad (%.3f deg)\n', motor_status_str{ii}, result_maxposlim(ii), result_maxposlim(ii)*180/pi);
+        motor_status_str{ii} = sprintf('%s\t Min. Position Limit: %.4f rad (%.3f deg)\n', motor_status_str{ii}, result_minposlim(ii), result_minposlim(ii)*180/pi);
+        motor_status_str{ii} = sprintf('%s\t Start-up Configuration: %s [8-bit flag]\n', motor_status_str{ii}, dec2bin(result_startup_configs(ii), 8));
+        motor_status_str{ii} = sprintf('%s\t Shutdown Configuration: %s [8-bit flag]\n', motor_status_str{ii}, dec2bin(result_shutdownconfigs(ii), 8));
       end
       
       if ( a_print_info )
-        fprintf('MOTOR SUMMARY:\n#################\n');
+        fprintf('MOTOR EEPROM STATE:\n#################\n\n');
         for ii = 1:length(motor_status_str)
           fprintf('%s\n', motor_status_str{ii});
         end
-        fprintf('\n');
+        fprintf('#################\n\n');
       end
     end
     
-    
-    % TODO: motor calibration procedure (i.e. read motor bias)
-
     
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Control Table EEPROM Area: Write/set methods
@@ -704,8 +724,6 @@ classdef XM430_W350_IO < DXL_IO
     % Output(s):
     %   result:       vector of PWM duty cycle limits (0 - 100%)
     function [ result ] = get_pwm_limit( obj, a_motor_ids )
-      duty_cycle_limit_cnt = floor(a_duty_cycle_limit*855/100);
-
       [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_PWM_LIMIT, obj.LEN_PWM_LIMIT );
 
       result = groupSyncReadData*100/855;
