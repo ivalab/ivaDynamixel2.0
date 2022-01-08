@@ -186,11 +186,11 @@ classdef XM430_W350_IO < DXL_IO
       end
       
       if ( a_print_info )
-        fprintf('MOTOR HW SUMMARY:\n#################\n\n');
+        fprintf('MOTOR HW SUMMARY:\n====================\n\n');
         for ii = 1:length(motor_status_str)
           fprintf('%s\n', motor_status_str{ii});
         end
-        fprintf('#################\n\n');
+        fprintf('====================\n\n');
       end
     end
     
@@ -252,11 +252,11 @@ classdef XM430_W350_IO < DXL_IO
       end
       
       if ( a_print_info )
-        fprintf('MOTOR EEPROM STATE:\n#################\n\n');
+        fprintf('MOTOR EEPROM STATE:\n====================\n\n');
         for ii = 1:length(motor_status_str)
           fprintf('%s\n', motor_status_str{ii});
         end
-        fprintf('#################\n\n');
+        fprintf('====================\n\n');
       end
     end
     

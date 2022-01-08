@@ -545,7 +545,7 @@ classdef DXL_IO < handle
       % TODO: check TxRxResult (optional)?
       dxl_comm_result = obj.getLastTxRxResult();
       if dxl_comm_result ~= obj.COMM_TXSUCCESS
-          fprintf('Comm. error: %s\n', obj.getTxRxResult(dxl_comm_result));
+          warning('Comm. error: %s\n', obj.getTxRxResult(dxl_comm_result));
       end
       
       obj.groupSyncWriteClearParam( group_id );        % clear write group data (permits group ID re-use)
