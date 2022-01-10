@@ -36,16 +36,12 @@ classdef DXL_IO < handle
     INSTR_SYNC_WRITE	  = 83;
     
     % Dynamixel error code masks
-    ERRBIT_VOLTAGE      = 1;
-    ERRBIT_ANGLE        = 2;
-    ERRBIT_OVERHEAT     = 4;
-    ERRBIT_ENCODER      = 8;
-    ERRBIT_SHOCK        = 16;
-    ERRBIT_OVERLOAD     = 32;
+    %   NOTE: 8-bit flag definition differs for each Dynamixel motor family
     
+    % Dynamixel broadcast motor ID
     DXL_BROADCAST_ID    = 254;
     
-    % Dynamixel communication status on last tx/rx
+    % Dynamixel (locally-determined) communication status on last tx/rx
     COMM_TXSUCCESS  = 0;
     COMM_RXSUCCESS  = 1;
     COMM_TXFAIL     = 2;
@@ -54,7 +50,7 @@ classdef DXL_IO < handle
     COMM_RXWAITING  = 5;
     COMM_RXTIMEOUT  = 6;
     COMM_RXCORRUPT  = 7;
-    
+        
     MODEL_NUM2NAME = containers.Map( [12, 300, 18, 10, 24, 28, 64, 107, 104, 29, ...
                                       30, 310, 311, 320, 321, 350, 1060, 1030, 1020, 1130, ...
                                       1120, 1050, 1040, 1010, 1000, 35072, 37928, 37896, 38176, 38152, ...
@@ -245,7 +241,7 @@ classdef DXL_IO < handle
     function packetHandler( obj )       % TODO: Protected
       packetHandler();
     end
-
+ 
 
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Dynamixel high-level motor interface (e.g. packet construction, Tx/Rx)

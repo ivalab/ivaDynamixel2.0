@@ -39,57 +39,89 @@ else
 end
 pause(1);
 
-%   Enable motor torque
+%   Enable torque, set motor position, read motor position & homing offset
+%     Enable motor torque
 torque_state = 1;
 fprintf('Enabling torque: %d, for motor ID: %d.\n\n', torque_state, MOTOR_ID);
 dxlio.set_torque_enable( MOTOR_ID, torque_state );
 pause(1);
 
-%   Command motor position
+%     Command motor position
 goal_pos = (0)*pi/180;  % rad
 fprintf('Commanding goal position: %d deg, for motor ID: %d.\n\n', goal_pos*180/pi, MOTOR_ID);
 dxlio.set_goal_position( MOTOR_ID, goal_pos );
 pause(3);
 
-%   Read present motor position
+%     Read present motor position
 [ cur_motor_pos ] = dxlio.get_present_position( MOTOR_ID );
 fprintf('Retrieved motor position: %.4f rad (%.3f deg), motor ID: %d.\n', cur_motor_pos, cur_motor_pos*180/pi, MOTOR_ID);
 pause(1);
 
-%   Read homing offset
+%     Read homing offset
 [ cur_homing_offset ] = dxlio.get_homing_offset( MOTOR_ID );
 fprintf('Retrieved homing offset: %.4f rad, for motor ID: %d.\n\n', cur_homing_offset, MOTOR_ID);
 
-%   Set homing offset
+%   Disable torque (write enable to EEPROM), change homing offset, verify
+%     Disable motor torque
+torque_state = 0;
+fprintf('Disabling torque: %d, for motor ID: %d.\n\n', torque_state, MOTOR_ID);
+dxlio.set_torque_enable( MOTOR_ID, torque_state );
+pause(1);
+
+%     Set homing offset
 homing_offset = 45*pi/180;  % rad
 fprintf('Configuring homing offset: %.4f rad, for motor ID: %d.\n\n', homing_offset, MOTOR_ID);
 dxlio.set_homing_offset( MOTOR_ID, homing_offset );
 pause(1);
 
-%   Read homing offset
+%     Read homing offset
 [ cur_homing_offset ] = dxlio.get_homing_offset( MOTOR_ID );
 fprintf('Retrieved homing offset: %.4f rad, for motor ID: %d.\n\n', cur_homing_offset, MOTOR_ID);
 
-%   Read present motor position
+%     Read present motor position
 [ cur_motor_pos ] = dxlio.get_present_position( MOTOR_ID );
 fprintf('Retrieved motor position: %.4f rad (%.3f deg), motor ID: %d.\n', cur_motor_pos, cur_motor_pos*180/pi, MOTOR_ID);
 pause(1);
 
-%   Command motor position
-goal_pos = (90)*pi/180;  % rad
+%   Re-enable torque, set new motor position, read motor position 
+%     Enable motor torque
+torque_state = 1;
+fprintf('Enabling torque: %d, for motor ID: %d.\n\n', torque_state, MOTOR_ID);
+dxlio.set_torque_enable( MOTOR_ID, torque_state );
+pause(1);
+
+%     Command motor position
+goal_pos = (0)*pi/180;  % rad
 fprintf('Commanding goal position: %d deg, for motor ID: %d.\n\n', goal_pos*180/pi, MOTOR_ID);
 dxlio.set_goal_position( MOTOR_ID, goal_pos );
 pause(3);
 
-%   Read present motor position
+%     Read present motor position
 [ cur_motor_pos ] = dxlio.get_present_position( MOTOR_ID );
 fprintf('Retrieved motor position: %.4f rad (%.3f deg), motor ID: %d.\n', cur_motor_pos, cur_motor_pos*180/pi, MOTOR_ID);
 pause(1);
 
-%   Disable motor torque
+%   Disable torque, change homing position back to 0, verify
+%     Disable motor torque
 torque_state = 0;
-fprintf('Enabling torque: %d, for motor ID: %d.\n\n', torque_state, MOTOR_ID);
+fprintf('Disabling torque: %d, for motor ID: %d.\n\n', torque_state, MOTOR_ID);
 dxlio.set_torque_enable( MOTOR_ID, torque_state );
+pause(1);
+
+%     Set homing offset
+homing_offset = 0*pi/180;  % rad
+fprintf('Configuring homing offset: %.4f rad, for motor ID: %d.\n\n', homing_offset, MOTOR_ID);
+dxlio.set_homing_offset( MOTOR_ID, homing_offset );
+pause(1);
+
+%     Read present motor position
+[ cur_motor_pos ] = dxlio.get_present_position( MOTOR_ID );
+fprintf('Retrieved motor position: %.4f rad (%.3f deg), motor ID: %d.\n', cur_motor_pos, cur_motor_pos*180/pi, MOTOR_ID);
+pause(1);
+
+%     Read homing offset
+[ cur_homing_offset ] = dxlio.get_homing_offset( MOTOR_ID );
+fprintf('Retrieved homing offset: %.4f rad, for motor ID: %d.\n\n', cur_homing_offset, MOTOR_ID);
 pause(1);
 
 
@@ -98,3 +130,9 @@ fprintf('Closing DXL port: %s.\n', PORT_NAME);
 dxlio.closePort();
 fprintf('Unloading DXL library.\n');
 dxlio.unload_library();
+
+
+
+
+
+

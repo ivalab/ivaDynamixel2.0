@@ -146,6 +146,13 @@ classdef XM430_W350_IO < DXL_IO
     LEN_PRESENT_INPUT_VOLTAGE      = 2;
     LEN_PRESENT_TEMPERATURE        = 1;
     LEN_BACKUP_READY               = 1;
+    
+    % XM430-W350 error code flags/masks
+    ERRBIT_VOLTAGE      = 1;
+    ERRBIT_OVERHEAT     = 4;
+    ERRBIT_ENCODER      = 8;
+    ERRBIT_SHOCK        = 16;
+    ERRBIT_OVERLOAD     = 32;
   end
   
   methods  (Access = public)
@@ -156,6 +163,7 @@ classdef XM430_W350_IO < DXL_IO
       
     end
 
+    
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Motor reports
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -255,6 +263,52 @@ classdef XM430_W350_IO < DXL_IO
         fprintf('MOTOR EEPROM STATE:\n====================\n\n');
         for ii = 1:length(motor_status_str)
           fprintf('%s\n', motor_status_str{ii});
+        end
+        fprintf('====================\n\n');
+      end
+    end
+    
+    % Read and report motor error state
+    %
+    % Input(s):
+    %   a_motor_ids:      vector of motor IDs to read data from
+    %
+    % Output(s):
+    %   result:           string summary of motor error states
+    %
+    %   TODO: handle comm. failures (for 1+ motor ids)
+    function [ motor_err_state_str ] = get_motor_error_state( obj, a_motor_ids, a_print_info )
+      if ( nargin < 3 )
+        a_print_info = false;
+      end
+      
+      [ result_err_state ] = obj.get_hw_error_status( a_motor_ids );
+      
+      motor_err_state_str = cell(size(a_motor_ids));
+      for ii = 1:length(a_motor_ids)
+        err_flags = result_err_state(ii);
+
+        % Parse into boolean (string) outcomes
+        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_VOLTAGE)) ) err_voltage = 'TRUE'; else err_voltage = 'FALSE'; end
+        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_OVERHEAT)) ) err_overheat = 'TRUE'; else err_overheat = 'FALSE'; end
+        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_ENCODER)) ) err_encoder = 'TRUE'; else err_encoder = 'FALSE'; end
+        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_SHOCK)) ) err_shock = 'TRUE'; else err_shock = 'FALSE'; end
+        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_OVERLOAD)) ) err_overload = 'TRUE'; else err_overload = 'FALSE'; end
+        
+        % Format motor error report
+        motor_err_state_str{ii} = sprintf('Motor ID: %d \n', a_motor_ids(ii));
+        
+        motor_err_state_str{ii} = sprintf('%s\t [%s]\tInput Voltage Error\n', motor_err_state_str{ii}, err_voltage);
+        motor_err_state_str{ii} = sprintf('%s\t [%s]\tOverheating Error\n', motor_err_state_str{ii}, err_overheat);
+        motor_err_state_str{ii} = sprintf('%s\t [%s]\tMotor Encoder Error\n', motor_err_state_str{ii}, err_encoder);
+        motor_err_state_str{ii} = sprintf('%s\t [%s]\tElectrical Shock Error\n', motor_err_state_str{ii}, err_shock);
+        motor_err_state_str{ii} = sprintf('%s\t [%s]\tOverload Error[%s]\n', motor_err_state_str{ii}, err_overload);
+      end
+      
+      if ( a_print_info )
+        fprintf('MOTOR ERROR STATE:\n====================\n\n');
+        for ii = 1:length(motor_err_state_str)
+          fprintf('%s\n', motor_err_state_str{ii});
         end
         fprintf('====================\n\n');
       end
@@ -1143,7 +1197,9 @@ classdef XM430_W350_IO < DXL_IO
     function [ result ] = get_present_position( obj, a_motor_ids )
       [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_PRESENT_POSITION, obj.LEN_PRESENT_POSITION);
 
-      result = groupSyncReadData*obj.ENC_TO_RAD;
+      groupSyncReadData_signed = double(typecast(uint32(groupSyncReadData), 'int32'));  % convert 32-bit unsigned int -> 32-bit signed int -> double
+      
+      result = groupSyncReadData_signed*obj.ENC_TO_RAD;
     end
 
     % Read motor velocity trajectory
