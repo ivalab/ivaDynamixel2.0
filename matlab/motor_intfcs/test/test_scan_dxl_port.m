@@ -42,21 +42,11 @@ for ii = 1:length(MOTOR_IDS)
   end
   pause(0.2);
 end
-%   Ping motor
-fprintf('Pinging target motors ...\n');
-for ii = 1:length(MOTOR_IDS)
-  ping_result = dxlio.pingGetModelNum( MOTOR_IDS(ii) );
-  if ( ~ping_result )
-    fprintf('\nPing result -> no response!');
-  else
-    fprintf('Ping result -> Model number: %d, for Motor ID: %d.\n', ping_result, MOTOR_IDS(ii));
-  end
-end
 fprintf('\n');
 pause(2);
 
 %   Clean-up
-fprintf('Closing DXL port: %s.\n', port_name);
+fprintf('Closing DXL port: %s.\n', PORT_NAME);
 dxlio.closePort();
 fprintf('Unloading DXL library.\n');
 dxlio.unload_library();

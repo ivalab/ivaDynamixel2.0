@@ -6,10 +6,10 @@
 % 
 
 % [0] == Script parameter(s)
-PORT_NAME = '/dev/ttyUSB7';
+PORT_NAME = '/dev/ttyUSB0';
 PORT_BAUD = 1000000;
 
-MOTOR_ID = 12;
+MOTOR_ID = 3;
 
 
 % [1] == Script setup
@@ -46,10 +46,15 @@ dxlio.set_torque_enable( MOTOR_ID, torque_state );
 pause(1);
 
 %   Command motor position
-goal_pos = (25)*pi/180;  % rad
+goal_pos = (0)*pi/180;  % rad
 fprintf('Commanding goal position: %d deg, for motor ID: %d.\n\n', goal_pos*180/pi, MOTOR_ID);
 dxlio.set_goal_position( MOTOR_ID, goal_pos );
-pause(3);
+pause(2);
+
+torque_state = 0;
+fprintf('Disabling torque: %d, for motor ID: %d.\n\n', torque_state, MOTOR_ID);
+dxlio.set_torque_enable( MOTOR_ID, torque_state );
+pause(1);
 
 %   Clean-up
 fprintf('Closing DXL port: %s.\n', PORT_NAME);
