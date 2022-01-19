@@ -1273,11 +1273,11 @@ classdef XM430_W350_IO < DXL_IO
       result = groupSyncReadData;
     end
 
-    % TODO: print motor info wrapper method -> generate nice info printout/string
     % TODO: print motor error status -> generate nice info printout/string
-
     % TODO: read/get methods for RW control table entries; not urgent
 
+    % TODO: uint32 <-> int32 typecast for negative position values
+    % constants for flag value, e.g. EXTENDED_POSITION_CONTROL_MODE
 
   end
 end
