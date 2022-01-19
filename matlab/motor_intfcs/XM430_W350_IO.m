@@ -373,7 +373,13 @@ classdef XM430_W350_IO < DXL_IO
     %
     % Input(s):
     %   a_motor_ids:  vector of motor IDs to configure
-    %   a_oper_mode_value:  vector of operating mode values (0, 1, 3, 4, 5 or 16)
+    %   a_oper_mode_value:  vector of operating mode values 
+    %                       ( 0  - Current Control Mode
+    %                         1  - Velocity Control Mode
+    %                         3  - Position Control Mode
+    %                         4  - Extended Position Control Mode
+    %                         5  - Current-based Position Control Mode
+    %                         16 - PWM Control Mode )
     function set_operating_mode( obj, a_motor_ids, a_oper_mode_value )
       assert( (length(a_oper_mode_value) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_operating_mode()]: Incompatible input vector lengths!');

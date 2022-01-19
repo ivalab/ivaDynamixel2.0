@@ -9,7 +9,7 @@
 PORT_NAME = '/dev/ttyUSB0';
 PORT_BAUD = 1000000;
 
-MOTOR_ID = 3;
+MOTOR_ID = 11;
 
 
 % [1] == Script setup
