@@ -420,8 +420,9 @@ classdef XM430_W350_IO < DXL_IO
       assert( (length(a_pos_offset) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_homing_offset()]: Incompatible input vector lengths!');
       
-      pos_offset_cnt = floor(a_pos_offset/obj.ENC_TO_RAD);
-            
+      pos_offset_cnt_signed = floor(a_pos_offset/obj.ENC_TO_RAD);
+      pos_offset_cnt = typecast(int32(pos_offset_cnt_signed), 'uint32');  % convert double -> 32-bit signed int -> 32-bit unsigned int
+
       obj.groupSyncWriteAddr( a_motor_ids, pos_offset_cnt, obj.ADDR_HOMING_OFFSET, obj.LEN_HOMING_OFFSET );
     end
 
@@ -429,12 +430,12 @@ classdef XM430_W350_IO < DXL_IO
     %
     % Input(s):
     %   a_motor_ids:  vector of motor IDs to configure
-    %   a_speed_thresh:  vector of moving threshold speeds (0.0+ rad/sec)
+    %   a_speed_thresh:  vector of moving threshold speeds (0 - 24.5324 rad/sec)
     function set_moving_threshold( obj, a_motor_ids, a_speed_thresh )
       assert( (length(a_speed_thresh) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_moving_threshold()]: Incompatible input vector lengths!');
       
-      speed_thresh_cnt = floor(a_speed_thresh/obj.ENC_TO_RAD);
+      speed_thresh_cnt = floor(a_speed_thresh/(0.229*2*pi/60));
 
       obj.groupSyncWriteAddr( a_motor_ids, speed_thresh_cnt, obj.ADDR_MOVING_THRESHOLD, obj.LEN_MOVING_THRESHOLD );
     end
@@ -526,6 +527,8 @@ classdef XM430_W350_IO < DXL_IO
     % Input(s):
     %   a_motor_ids:  vector of motor IDs to configure
     %   a_max_pos_limit:  vector of max. position limits (0 - 2*pi rad)
+    % 
+    % Note(s): Only applicable when motor in Position Control Mode
     function set_max_position_limit( obj, a_motor_ids, a_max_pos_limit )
       assert( (length(a_max_pos_limit) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_max_position_limit()]: Incompatible input vector lengths!');
@@ -540,6 +543,8 @@ classdef XM430_W350_IO < DXL_IO
     % Input(s):
     %   a_motor_ids:  vector of motor IDs to configure
     %   a_min_pos_limit:  vector of min. position limits (0 - 2*pi rad)
+    % 
+    % Note(s): Only applicable when motor in Position Control Mode
     function set_min_position_limit( obj, a_motor_ids, a_min_pos_limit )
       assert( (length(a_min_pos_limit) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_min_position_limit()]: Incompatible input vector lengths!');
@@ -721,7 +726,9 @@ classdef XM430_W350_IO < DXL_IO
     function [ result ] = get_homing_offset( obj, a_motor_ids )
       [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_HOMING_OFFSET, obj.LEN_HOMING_OFFSET );
 
-      result = groupSyncReadData*obj.ENC_TO_RAD;
+      groupSyncReadData_signed = double(typecast(uint32(groupSyncReadData), 'int32'));  % convert 32-bit unsigned int -> 32-bit signed int -> double
+
+      result = groupSyncReadData_signed*obj.ENC_TO_RAD;
     end
 
     % Read motor moving threshold
@@ -730,11 +737,11 @@ classdef XM430_W350_IO < DXL_IO
     %   a_motor_ids:  vector of motor IDs to read data from
     % 
     % Output(s):
-    %   result:       vector of moving threshold speeds (0.0+ rad/sec)
+    %   result:       vector of moving threshold speeds (0 - 24.5324 rad/sec)
     function [ result ] = get_moving_threshold( obj, a_motor_ids )
       [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_MOVING_THRESHOLD, obj.LEN_MOVING_THRESHOLD );
 
-      result = groupSyncReadData*obj.ENC_TO_RAD;
+      result = groupSyncReadData*(0.229*2*pi/60);
     end
 
     % Read motor temperature limit
@@ -822,6 +829,8 @@ classdef XM430_W350_IO < DXL_IO
     % 
     % Output(s):
     %   result:       vector of max. position limits (0 - 2*pi rad)
+    %
+    % Note(s): Only applicable when motor in Position Control Mode
     function [ result ] = get_max_position_limit( obj, a_motor_ids )
       [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_MAX_POSITION_LIMIT, obj.LEN_MAX_POSITION_LIMIT );
 
@@ -835,6 +844,8 @@ classdef XM430_W350_IO < DXL_IO
     % 
     % Output(s):
     %   result:       vector of min. position limits (0 - 2*pi rad)
+    %
+    % Note(s): Only applicable when motor in Position Control Mode
     function [ result ] = get_min_position_limit( obj, a_motor_ids )
       [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_MIN_POSITION_LIMIT, obj.LEN_MIN_POSITION_LIMIT );
 
@@ -1072,12 +1083,16 @@ classdef XM430_W350_IO < DXL_IO
     %
     % Input(s):
     %   a_motor_ids:  vector of motor IDs to configure
-    %   a_pos:  vector of position values (0 - 2*pi rad)
+    %   a_pos:  vector of position values 
+    %           (Position Control Mode: 0 - 2*pi rad)
+    %           (Extended Position Control Mode: -256*2*pi - +256*2*pi rad)
+    %           (Current-based Position Control Mode: -256*2*pi - +256*2*pi rad)
     function set_goal_position( obj, a_motor_ids, a_pos )
       assert( (length(a_pos) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_goal_pos()]: Incompatible input vector lengths!');
 
-      pos_cnt = floor(a_pos/obj.ENC_TO_RAD);
+      pos_cnt_signed = floor(a_pos/obj.ENC_TO_RAD);
+      pos_cnt = typecast(int32(pos_cnt_signed), 'uint32');  % convert double -> 32-bit signed int -> 32-bit unsigned int
 
       obj.groupSyncWriteAddr( a_motor_ids, pos_cnt, obj.ADDR_GOAL_POSITION, obj.LEN_GOAL_POSITION );
     end
@@ -1200,7 +1215,7 @@ classdef XM430_W350_IO < DXL_IO
     % 
     % Output(s):
     %   result:           vector of position values (rad)
-    function [ result ] = get_present_position( obj, a_motor_ids )
+    function [ result ] = get_present_position(  obj, a_motor_ids )
       [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_PRESENT_POSITION, obj.LEN_PRESENT_POSITION);
 
       groupSyncReadData_signed = double(typecast(uint32(groupSyncReadData), 'int32'));  % convert 32-bit unsigned int -> 32-bit signed int -> double
@@ -1231,7 +1246,9 @@ classdef XM430_W350_IO < DXL_IO
     function [ result ] = get_position_trajectory( obj, a_motor_ids )
       [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_POSITION_TRAJECTORY, obj.LEN_POSITION_TRAJECTORY);
 
-      result = groupSyncReadData*obj.ENC_TO_RAD;
+      groupSyncReadData_signed = double(typecast(uint32(groupSyncReadData), 'int32'));  % convert 32-bit unsigned int -> 32-bit signed int -> double
+
+      result = groupSyncReadData_signed*obj.ENC_TO_RAD;
     end
 
     % Read motor present input voltage
@@ -1276,7 +1293,6 @@ classdef XM430_W350_IO < DXL_IO
     % TODO: print motor error status -> generate nice info printout/string
     % TODO: read/get methods for RW control table entries; not urgent
 
-    % TODO: uint32 <-> int32 typecast for negative position values
     % constants for flag value, e.g. EXTENDED_POSITION_CONTROL_MODE
 
   end
