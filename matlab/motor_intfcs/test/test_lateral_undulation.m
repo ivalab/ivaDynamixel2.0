@@ -41,24 +41,23 @@ fprintf('Open port success: %d.\n\n', openPortResult);
 %   Load joint bias data 
 %   N/A
 
-
 %   Run Lateral Undulation
 %     Pre-configuration
-%       TODO: Set extended position mode
+%       Configure motors for 'Extended Position Control Mode'
 oper_mode = 4*ones(size(MOTOR_IDS));
-fprintf('Setting operating mode: Extended Position Mode. \n');
+fprintf('Setting operating mode: Extended Position Mode.\n');
 dxlio.set_operating_mode( MOTOR_IDS, oper_mode )
 pause(1);
 
 %       Enable motor torque
 torque_state = ones(size(MOTOR_IDS));
-fprintf('Enabling torque: %d, for motor ID: %d.\n\n', torque_state, MOTOR_IDS);
+fprintf('Enabling torque: %d, for motor ID: %d.\n', torque_state, MOTOR_IDS);
 dxlio.set_torque_enable( MOTOR_IDS, torque_state );
 pause(1);
 
 %     Command initial pose
 goal_pos = theta_lu(:, 1);  % rad
-fprintf('Commanding initial gait shape ...\n\n');
+fprintf('\nCommanding initial gait shape ...\n\n');
 dxlio.set_goal_position( MOTOR_IDS, goal_pos );
 % dxl_io.execute_trajectory( 0, 0:10, joint_bias, theta_lu(:, 1), vel_lu(:, 1), time_lu(:, 1), joint_compl_margin_lu(:, 1) );
 pause(2);
@@ -75,8 +74,6 @@ for ii = 1:size(time_lu, 2)
 end
 pause(1);
 
-%   Clean-up
-%     Disable motor torque
 fprintf('\nCompleted gait execution.\n\n');
 
 torque_state = zeros(size(MOTOR_IDS));
@@ -84,7 +81,10 @@ fprintf('Disabling torque for motor ID: %d.\n', torque_state);
 dxlio.set_torque_enable( MOTOR_IDS, torque_state );
 pause(1);
 
-fprintf('Closing DXL port: %s.\n', PORT_NAME);
+
+% [4] == Clean-up
+%   Disable motor torque
+fprintf('\nClosing DXL port: %s.\n', PORT_NAME);
 dxlio.closePort();
 fprintf('Unloading DXL library.\n\n');
 dxlio.unload_library();
