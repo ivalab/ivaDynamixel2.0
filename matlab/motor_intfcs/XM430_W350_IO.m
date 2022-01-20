@@ -22,7 +22,7 @@ classdef XM430_W350_IO < DXL_IO
     ANGLE_MAX = 2*pi;       % max. achievable motor position (rad)
     ENC_BIT_LEN = 12;       % encoder count bit-length
 
-    ENC_TO_RAD = 2*pi/(2^12-1);         % (rad/encoder cnts)
+    ENC_TO_RAD = 2*pi/(2^12-1);        % (rad/encoder cnts)
     ENC_HOME_POS = ceil((2^12-1)/2);   % Encoder count offset for zero rad. position
   end
   
