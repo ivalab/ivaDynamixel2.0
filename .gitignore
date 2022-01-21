@@ -2,5 +2,6 @@
 # Matlab back-up files
 *.asv
 
-
+# C (intermediate) compile artifacts
+*.o
 
