@@ -1,3 +1,10 @@
+% 
+% Test script: test_lateral_undulation.m
+% 
+% Description: 
+%   Command lateral undulation joint trajectory on chain of 11 motors.
+% 
+
 % [0] == Script Usage Parameter(s):
 LU_CYCLES = 10;
 

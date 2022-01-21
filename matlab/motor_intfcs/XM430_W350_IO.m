@@ -16,17 +16,19 @@ classdef XM430_W350_IO < DXL_IO
   % Detailed explanation goes here
 
   properties (Access = protected)
-    PROTOCOL_VERSION = 2.0;
-    
-    ANGLE_MIN = 0;          % min. achievable motor position (rad)
-    ANGLE_MAX = 2*pi;       % max. achievable motor position (rad)
-    ENC_BIT_LEN = 12;       % encoder count bit-length
-
-    ENC_TO_RAD = 2*pi/(2^12-1);        % (rad/encoder cnts)
-    ENC_HOME_POS = ceil((2^12-1)/2);   % Encoder count offset for zero rad. position
+    % Motor instance configuration management
+    MOTOR_OP_MODE;          % containers.Map: operating (control) modes
+    MOTOR_MIN_ANGLE;        % containers.Map: min. achievable motor position (rad)
+    MOTOR_MAX_ANGLE;        % containers.Map: max. achievable motor position (rad)
+    MOTOR_HOME_ANGLE;       % containers.Map: encoder count offset for zero rad. position
   end
   
   properties (Constant)
+    % (Immutable) Motor model-specific properties
+    PROTOCOL_VERSION = 2.0;
+    ENC_BIT_LEN = 12;               % encoder count bit-length
+    ENC_TO_RAD = 2*pi/(2^12-1);     % (rad/encoder cnts)
+
     % Dynamixel control table field addresses
     % ==== EEPROM Table ==== 
     ADDR_MODEL_NUMBER               = 0;
@@ -153,6 +155,14 @@ classdef XM430_W350_IO < DXL_IO
     ERRBIT_ENCODER      = 8;
     ERRBIT_SHOCK        = 16;
     ERRBIT_OVERLOAD     = 32;
+
+    % XM430-W350 operating (control) modes
+    OPMODE_CURRENT_CNTRL = 0;
+    OPMODE_VELOCITY_CNTRL = 1;
+    OPMODE_POSITION_CNTRL = 3;
+    OPMODE_EXT_POS_CNTRL = 4;
+    OPMODE_CURRENT_POS_CNTRL = 5;
+    OPMODE_PWM_CNTRL = 16;
   end
   
   methods  (Access = public)
@@ -161,6 +171,45 @@ classdef XM430_W350_IO < DXL_IO
       
       obj@DXL_IO(); 
       
+      % Motor instance configuration management
+      obj.MOTOR_OP_MODE = containers.Map();           % min. achievable motor position (rad)
+      obj.MOTOR_MIN_ANGLE = containers.Map();         % min. achievable motor position (rad)
+      obj.MOTOR_MAX_ANGLE = containers.Map();         % max. achievable motor position (rad)
+      obj.MOTOR_HOME_ANGLE = containers.Map();        % angle offset for zero/home position (rad)
+
+    end
+
+
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Multi-motor management (configure/enforce motor-specific properties)
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    % TODO: validity check on other argument types when parsing
+    % Motor instance configuration management
+    function configure_motor( obj, a_motor_ids, varargin)
+      % Parse input parameters
+      parser = inputParser;
+      addParameter(parser, 'OpMode', NaN, obj.opmode_is_valid);         % operating (control) mode
+      addParameter(parser, 'MinAngle', NaN);       % min. angle (SW-enforced; extended position control mode) 
+      addParameter(parser, 'MaxAngle', NaN);       % max. angle (SW-enforced; extended position control mode)
+      addParameter(parser, 'HomeAngle', NaN);      % zero/home angle (SW-implemented; NOT YET IMPLEMENTED HERE)
+      parse(parser, varargin{:});
+      input_params = parser.Results;    % struct format
+      
+      for id = a_motor_ids
+        if ( ~isnan(input_params.OpMode) )
+          obj.MOTOR_OP_MODE(id) = input_params.OpMode;
+        end
+        if ( ~isnan(input_params.MinAngle) )
+          obj.MOTOR_MIN_ANGLE(id) = input_params.MinAngle;
+        end
+        if ( ~isnan(input_params.MaxAngle) )
+          obj.MOTOR_MAX_ANGLE(id) = input_params.MaxAngle;
+        end
+        if ( ~isnan(input_params.HomeAngle) )
+          obj.MOTOR_HOME_ANGLE(id) = input_params.HomeAngle;
+        end
+      end
     end
 
     
@@ -183,7 +232,7 @@ classdef XM430_W350_IO < DXL_IO
       end
       
       [ result_model_nums ] = obj.get_model_number( a_motor_ids );
-%       [ result_model_infos ] = obj.get_model_info( a_motor_ids );     % Not used
+%       [ result_model_infos ] = obj.get_model_info( a_motor_ids );     % product lines don't currently implement
       [ result_firmware_vers ] = obj.get_firmware_ver( a_motor_ids );
       
       motor_status_str = cell(size(a_motor_ids));
@@ -1294,6 +1343,40 @@ classdef XM430_W350_IO < DXL_IO
     % TODO: read/get methods for RW control table entries; not urgent
 
     % constants for flag value, e.g. EXTENDED_POSITION_CONTROL_MODE
+
+  end
+
+  methods (Access = protected)
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Helpers
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    function [ result ] = opmode_to_string( obj, a_opmode )
+      if ( a_opmode == obj.OPMODE_CURRENT_CNTRL )
+        result = 'OP_MODE_CURRENT_CNTRL';
+      elseif ( a_opmode == obj.OPMODE_VELOCITY_CNTRL )
+        result = 'OPMODE_VELOCITY_CNTRL';
+      elseif ( a_opmode == obj.OPMODE_POSITION_CNTRL )
+        result = 'OPMODE_POSITION_CNTRL';
+      elseif ( a_opmode == obj.OPMODE_EXT_POS_CNTRL )
+        result = 'OPMODE_EXT_POS_CNTRL';
+      elseif ( a_opmode == obj.OPMODE_CURRENT_POS_CNTRL )
+        result = 'OPMODE_CURRENT_POS_CNTRL';
+      elseif ( a_opmode == obj.OPMODE_PWM_CNTRL )
+        result = 'OPMODE_PWM_CNTRL';
+      else
+        error('[XM430_W350_IO::opmode_to_string()] Invalid operating mode specified: %d.', a_opmode);
+      end
+    end
+
+    function [ result ] = opmode_is_valid( obj, a_opmode )
+      result = ( a_opmode == obj.OPMODE_CURRENT_CNTRL || ...
+                  a_opmode == obj.OPMODE_VELOCITY_CNTRL || ...
+                  a_opmode == obj.OPMODE_POSITION_CNTRL ||...
+                  a_opmode == obj.OPMODE_EXT_POS_CNTRL || ...
+                  a_opmode == obj.OPMODE_CURRENT_POS_CNTRL || ...
+                  a_opmode == obj.OPMODE_PWM_CNTRL );
+    end
 
   end
 end
