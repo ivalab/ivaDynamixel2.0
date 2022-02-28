@@ -21,6 +21,8 @@ classdef XM430_W350_IO < DXL_IO
     MOTOR_MIN_ANGLE;        % containers.Map: min. achievable motor position (rad)
     MOTOR_MAX_ANGLE;        % containers.Map: max. achievable motor position (rad)
     MOTOR_HOME_ANGLE;       % containers.Map: encoder count offset for zero rad. position
+
+    control_table_configured = False;     % boolean flag tracks whether indirect addresses configured
   end
   
   properties (Constant)
@@ -149,6 +151,12 @@ classdef XM430_W350_IO < DXL_IO
     LEN_PRESENT_TEMPERATURE        = 1;
     LEN_BACKUP_READY               = 1;
     
+    % Control table indirect addresses and data (i.e. 'custom' fields)
+    %   Simultaneous comm. of Goal Position and Velocity Profile
+    ADDR_INDIRECT_POS_VEL          = 168;    %    Indirect register location (address mapping)
+    ADDR_INDIRECT_DATA_POS_VEL     = 224;    %    Indirect data register
+    LEN_INDIRECT_POS_VEL           = 8;      %    Byte length: 8 (LEN_GOAL_POSITION + LEN_PROFILE_VELOCITY)
+
     % XM430-W350 error code flags/masks
     ERRBIT_VOLTAGE      = 1;
     ERRBIT_OVERHEAT     = 4;
@@ -177,6 +185,33 @@ classdef XM430_W350_IO < DXL_IO
       obj.MOTOR_MAX_ANGLE = containers.Map();         % max. achievable motor position (rad)
       obj.MOTOR_HOME_ANGLE = containers.Map();        % angle offset for zero/home position (rad)
 
+    end
+
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Control table management
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    % Configure control table indirect addresses 
+    % (XM430-W350-specific configuration)
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to configure
+    function configure_control_table( obj, a_motor_ids )
+      % Goal Position (4 registers) & Profile Velocity (4 registers) 
+      %     ADDR_INDIRECT_POS_VEL -> ADDR_INDIRECT_POS_VEL+15
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_GOAL_POSITION, obj.ADDR_INDIRECT_POS_VEL, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_GOAL_POSITION+1, obj.ADDR_INDIRECT_POS_VEL+2, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_GOAL_POSITION+2, obj.ADDR_INDIRECT_POS_VEL+4, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_GOAL_POSITION+3, obj.ADDR_INDIRECT_POS_VEL+6, 2 );
+
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY, obj.ADDR_INDIRECT_POS_VEL+8, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY+1, obj.ADDR_INDIRECT_POS_VEL+10, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY+2, obj.ADDR_INDIRECT_POS_VEL+12, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY+3, obj.ADDR_INDIRECT_POS_VEL+14, 2 );
+
+
+      % Toggle indicator flag
+      obj.control_table_configured = True;
     end
 
 
@@ -1109,6 +1144,8 @@ classdef XM430_W350_IO < DXL_IO
     % Input(s):
     %   a_motor_ids:  vector of motor IDs to configure
     %   a_accel_profile:  vector of LED on/off values (1, 0)
+    %
+    % TODO: conversion from units to count and update documentation
     function set_acceleration_profile( obj, a_motor_ids, a_accel_profile)
       assert( (length(a_accel_profile) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_acceleration_profile()]: Incompatible input vector lengths!');
@@ -1120,12 +1157,14 @@ classdef XM430_W350_IO < DXL_IO
     %
     % Input(s):
     %   a_motor_ids:  vector of motor IDs to configure
-    %   a_vel_profile:  vector of LED on/off values (1, 0)
+    %   a_vel_profile:  vector of velocity values (rad/sec)
     function set_velocity_profile( obj, a_motor_ids, a_vel_profile)
       assert( (length(a_vel_profile) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_velocity_profile()]: Incompatible input vector lengths!');
       
-      obj.groupSyncWriteAddr( a_motor_ids, a_vel_profile, obj.ADDR_PROFILE_VELOCITY, obj.LEN_PROFILE_VELOCITY );
+      vel_profile_cnt = floor(a_vel_profile/(0.229*2*pi/60));
+
+      obj.groupSyncWriteAddr( a_motor_ids, vel_profile_cnt, obj.ADDR_PROFILE_VELOCITY, obj.LEN_PROFILE_VELOCITY );
     end
 
     % Command motor goal positions
@@ -1145,8 +1184,6 @@ classdef XM430_W350_IO < DXL_IO
 
       obj.groupSyncWriteAddr( a_motor_ids, pos_cnt, obj.ADDR_GOAL_POSITION, obj.LEN_GOAL_POSITION );
     end
-
-    % TODO: method to set goal position & goal velocity simultaneously
 
 
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1339,8 +1376,57 @@ classdef XM430_W350_IO < DXL_IO
       result = groupSyncReadData;
     end
 
+
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Custom control table registers
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    % Simultaneously set Goal Position and Velocity Profile
+    %
+    % Input(s):
+    %   a_motor_ids:      vector of motor IDs to configure
+    %   a_pos:  vector of position values 
+    %           (Position Control Mode: 0 - 2*pi rad)
+    %           (Extended Position Control Mode: -256*2*pi - +256*2*pi rad)
+    %           (Current-based Position Control Mode: -256*2*pi - +256*2*pi rad)
+    %   a_vel_profile:  vector of velocity values (rad/sec)
+    function set_goal_pos_vel_profile( obj, a_motor_ids, a_pos, a_vel_profile )
+      assert( (length(a_pos) == length(a_motor_ids) && length(a_vel_profile) == length(a_motor_ids)), ...
+              '[DXLIO_XM430_W350::set_goal_pos_vel_profile()]: Incompatible input vector lengths!');
+
+      group_id = obj.groupSyncWrite( obj.ADDR_INDIRECT_DATA_POS_VEL, obj.LEN_INDIRECT_POS_VEL );
+
+      % Add motor IDs to write group
+      for ii = 1:length(a_motor_ids)
+        % Add goal position to group write config.
+        pos_cnt_signed = floor(a_pos(ii)/obj.ENC_TO_RAD);
+        pos_cnt = typecast(int32(pos_cnt_signed), 'uint32');  % convert double -> 32-bit signed int -> 32-bit unsigned int
+        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), pos_cnt, int32(obj.LEN_GOAL_POSITION) ) )
+          error('[DXL_IO::set_goal_pos_vel_profile()] Motor goal position failed to be added to write group (%d) ...', a_motor_ids(ii));
+        end
+
+        % Add velocity profile to group write config.
+        vel_profile_cnt = floor(a_vel_profile(ii)/(0.229*2*pi/60));
+        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), vel_profile_cnt, int32(obj.LEN_PROFILE_VELOCITY) ) )
+          error('[DXL_IO::set_goal_pos_vel_profile()] Motor velocity profile failed to be added to write group (%d) ...', a_motor_ids(ii));
+        end
+      end
+      
+      obj.groupSyncWriteTxPacket( group_id );
+        
+      % TODO: check TxRxResult (optional)?
+      dxl_comm_result = obj.getLastTxRxResult();
+      if dxl_comm_result ~= obj.COMM_TXSUCCESS
+          warning('Comm. error: %s\n', obj.getTxRxResult(dxl_comm_result));
+      end
+      
+      obj.groupSyncWriteClearParam( group_id );        % clear write group data (permits group ID re-use)
+    end
+
+
     % TODO: print motor error status -> generate nice info printout/string
     % TODO: read/get methods for RW control table entries; not urgent
+    % TODO: unit conversion utilities (e.g. pos, vel, acc) to/from encoder counts
 
     % constants for flag value, e.g. EXTENDED_POSITION_CONTROL_MODE
 
