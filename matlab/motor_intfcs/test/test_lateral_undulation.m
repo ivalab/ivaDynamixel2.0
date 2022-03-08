@@ -70,7 +70,7 @@ dxlio.set_goal_position( MOTOR_IDS, goal_pos );
 pause(2);
 
 %     Query user to continue
-input('Press <Enter> to gait execution ...');
+input('Press <Enter> to begin gait execution ...');
 
 %   Execute trajectory
 dt = time_lu(end) - time_lu(end-1);

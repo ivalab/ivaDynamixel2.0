@@ -40,6 +40,8 @@ classdef DXL_IO < handle
     
     % Dynamixel broadcast motor ID
     DXL_BROADCAST_ID    = 254;
+    DXL_MIN_ID          = 0;
+    DXL_MAX_ID          = 253;
     
     % Dynamixel (locally-determined) communication status on last tx/rx
     COMM_TXSUCCESS  = 0;
@@ -789,6 +791,10 @@ classdef DXL_IO < handle
 
     function is_port_closed( obj, src_func_str )
       assert( ~obj.port_open, '[DXL_IO::%s] A port is already open.', src_func_str);
+    end
+
+    function [result] = valid_motor_id( obj, a_motor_ids )
+      result = (a_motor_ids >= obj.DXL_MIN_ID && a_motor_ids <= obj.DXL_MAX_ID);
     end
   end
 
