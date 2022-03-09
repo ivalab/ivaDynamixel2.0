@@ -1,8 +1,9 @@
 % 
-% Test script: test_XM430W350_move_single.m
+% Test script: test_XM430W350_set_goal_vel.m
 % 
 % Description: 
-%   Instantiate XM430_W350_IO motor IO class and command motor position.
+%   Instantiate XM430_W350_IO motor IO class and command motor position 
+%   and velocity.
 % 
 
 % [0] == Script parameter(s)
@@ -18,7 +19,7 @@ addpath('../');
 
 
 % [2] == Instantiate & exercise functionality
-%   Connect
+% Connect
 dxlio = XM430_W350_IO();
 fprintf('\n');
 
