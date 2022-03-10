@@ -65,6 +65,7 @@ pause(1);
 
 %   Configure motors indirect registers (simultaneous position & velocity
 %   commands)
+fprintf('Configuring motor control table.\n\n');
 dxlio.configure_control_table( MOTOR_IDS );
 pause(1);
 
@@ -102,11 +103,6 @@ end
 pause(1);
 
 fprintf('\nCompleted gait execution.\n\n');
-
-torque_state = zeros(size(MOTOR_IDS));
-fprintf('Disabling torque for motor ID: %d.\n', torque_state);
-dxlio.set_torque_enable( MOTOR_IDS, torque_state );
-pause(1);
 
 
 % [4] == Clean-up

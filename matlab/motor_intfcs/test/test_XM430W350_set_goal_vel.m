@@ -83,7 +83,7 @@ pause(1);
 
 %   Command motor position
 goal_pos = (90)*pi/180;  % rad
-des_vel = (45)*pi/180;   % rad/s
+des_vel = (30)*pi/180;   % rad/s
 fprintf('Commanding position & velocity: (%.2f deg, %.2f deg/s) for motor ID: %d.\n\n', goal_pos*180/pi, des_vel*180/pi, MOTOR_ID);
 dxlio.set_goal_pos_vel_profile( MOTOR_ID, goal_pos, des_vel );
 pause(3);
