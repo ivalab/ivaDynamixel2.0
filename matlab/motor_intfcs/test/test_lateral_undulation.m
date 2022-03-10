@@ -8,7 +8,9 @@
 % [0] == Script Usage Parameter(s):
 LU_CYCLES = 10;
 
-MOTOR_IDS = 1:12;   % 1 through 12 -> tail to head
+% MOTOR_IDS = 1:12;   % 1 through 12 -> tail to head
+MOTOR_IDS = 1;   % 1 through 12 -> tail to head
+JOINT_SELECT = 1;
 
 PORT_NAME = '/dev/ttyUSB0';
 PORT_BAUD = 1000000;
@@ -17,7 +19,7 @@ PORT_BAUD = 1000000;
 % [1] == Update Matlab
 % Matlab libraries.
 addpath( '../' );
-
+addpath('~/Snakey/Matlab/execution');
 
 % [2] == Generate snake gait trajectories
 % Lateral Undulation
@@ -32,51 +34,69 @@ joint_compl_margin_lu = tmp;
 
 
 % [3] == Execute demo
-% Sequence: Lateral Undulation
-
-% Setup motor I/O interface
+% Connect
 dxlio = XM430_W350_IO();
 fprintf('\n');
 
-fprintf('Loading DXL library.\n');
+fprintf('Loading DXL library.\n\n');
 dxlio.load_library();
 
-fprintf('Opening port: %s at baud: %d.... \n\n', PORT_NAME, PORT_BAUD);
+fprintf('Opening port: %s at baud: %d.... \n', PORT_NAME, PORT_BAUD);
 openPortResult = dxlio.openPort( PORT_NAME, PORT_BAUD );
 fprintf('Open port success: %d.\n\n', openPortResult);
 
-%   Load joint bias data 
-%   N/A
+%   Ping motor
+fprintf('Pinging target motor ...\n');
+ping_result = dxlio.pingGetModelNum( MOTOR_IDS );
+if ( ~ping_result )
+  fprintf('\nPing result -> no response!');
+else
+  fprintf('Ping result -> Model number: %d, for Motor ID: %d.\n\n', ping_result, MOTOR_IDS);
+end
+pause(1);
 
-%   Run Lateral Undulation
-%     Pre-configuration
-%       Configure motors for 'Extended Position Control Mode'
+
+% Motor configuration
+%   Configure motors for 'Extended Position Control Mode'
 oper_mode = 4*ones(size(MOTOR_IDS));
 fprintf('Setting operating mode: Extended Position Mode.\n');
 dxlio.set_operating_mode( MOTOR_IDS, oper_mode )
 pause(1);
 
-%       Enable motor torque
-torque_state = ones(size(MOTOR_IDS));
-fprintf('Enabling torque: %d, for motor ID: %d.\n', torque_state, MOTOR_IDS);
+%   Configure motors indirect registers (simultaneous position & velocity
+%   commands)
+dxlio.configure_control_table( MOTOR_IDS );
+pause(1);
+
+
+%   Query user to transition robot to initial gait shape
+input('Press <Enter> to command initial gait shape ...');
+
+% Motor position & velocity
+%   Enable motor torque
+torque_state = 1;
+fprintf('Enabling torque: %d, for motor ID: %d.\n\n', torque_state, MOTOR_IDS);
 dxlio.set_torque_enable( MOTOR_IDS, torque_state );
 pause(1);
 
-%     Command initial pose
-goal_pos = theta_lu(:, 1);  % rad
-fprintf('\nCommanding initial gait shape ...\n\n');
-dxlio.set_goal_position( MOTOR_IDS, goal_pos );
-% dxl_io.execute_trajectory( 0, 0:10, joint_bias, theta_lu(:, 1), vel_lu(:, 1), time_lu(:, 1), joint_compl_margin_lu(:, 1) );
+%   Command initial gait shape
+goal_pos = theta_lu(JOINT_SELECT, 1);  % rad
+goal_vel = vel_lu(JOINT_SELECT, 1);
+dxlio.set_goal_pos_vel_profile( MOTOR_IDS, goal_pos, goal_vel );
 pause(2);
 
-%     Query user to continue
+%   Query user to start gait
 input('Press <Enter> to begin gait execution ...');
 
 %   Execute trajectory
 dt = time_lu(end) - time_lu(end-1);
 for ii = 1:size(time_lu, 2)
-  goal_pos = theta_lu(:, ii);  % rad
-  dxlio.set_goal_position( MOTOR_IDS, goal_pos );
+  goal_pos = theta_lu(JOINT_SELECT, ii);  % rad
+  goal_vel = vel_lu(JOINT_SELECT, ii);
+
+  % Command motor position/velocity
+  dxlio.set_goal_pos_vel_profile( MOTOR_IDS, goal_pos, goal_vel );
+
   pause(dt*0.9);
 end
 pause(1);
@@ -90,10 +110,16 @@ pause(1);
 
 
 % [4] == Clean-up
-%   Disable motor torque
-fprintf('\nClosing DXL port: %s.\n', PORT_NAME);
+% Disable motor torque
+torque_state = 0;
+fprintf('Disabling torque: %d, for motor ID: %d.\n\n', torque_state, MOTOR_IDS);
+dxlio.set_torque_enable( MOTOR_IDS, torque_state );
+pause(1);
+
+%   Unload libraries
+fprintf('Closing DXL port: %s.\n', PORT_NAME);
 dxlio.closePort();
-fprintf('Unloading DXL library.\n\n');
+fprintf('Unloading DXL library.\n');
 dxlio.unload_library();
 
 
