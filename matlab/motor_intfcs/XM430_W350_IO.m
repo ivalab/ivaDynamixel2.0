@@ -24,12 +24,18 @@ classdef XM430_W350_IO < DXL_IO
 
     MOTOR_INDIR_REGS_CONFIGURED;      % motor ID map: boolean flags track whether indirect addresses configured
   end
-  
+    
   properties (Constant)
     % (Immutable) Motor model-specific properties
-    PROTOCOL_VERSION = 2.0;
-    ENC_BIT_LEN = 12;               % encoder count bit-length
+    ANGLE_MIN = -180*pi/180;        % min. achievable motor position (rad)
+    ANGLE_MAX = 180*pi/180;         % max. achievable motor position (rad)
+    ENC_BIT_LEN = 12;               % encoder count bit length
+
     ENC_TO_RAD = 2*pi/(2^12-1);     % (rad/encoder cnts)
+    ENC_HOME_POS = 0*180/pi;        % Encoder count offset for zero rad. position 
+                                    %   (Note: motor-dependent applicability)
+    
+    PROTOCOL_VERSION = 2.0;
 
     % Dynamixel control table field addresses
     % ==== EEPROM Table ==== 
@@ -214,12 +220,11 @@ classdef XM430_W350_IO < DXL_IO
       obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY+2, obj.ADDR_INDIRECT_POS_VEL+12, 2 );
       obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY+3, obj.ADDR_INDIRECT_POS_VEL+14, 2 );
 
-
       % Toggle indicator flag(s)
       if ( sum(a_motor_ids == obj.DXL_BROADCAST_ID) )   % list contains broadcast ID
-        obj.MOTOR_INDIR_REGS_CONFIGURED(:) = true;
+        obj.set_properties( obj.DXL_MIN_ID:obj.DXL_MAX_ID, 'IndirectRegsConfigured', true)
       else
-        obj.MOTOR_INDIR_REGS_CONFIGURED(a_motor_ids) = true;
+        obj.set_properties( a_motor_ids, 'IndirectRegsConfigured', true)
       end
     end
 
@@ -234,26 +239,30 @@ classdef XM430_W350_IO < DXL_IO
     function set_properties( obj, a_motor_ids, varargin)
       % Parse input parameters
       parser = inputParser;
-      addParameter(parser, 'OpMode', NaN, obj.opmode_is_valid);         % operating (control) mode
+      addParameter(parser, 'OpMode', NaN, @obj.opmode_is_valid);         % operating (control) mode
       addParameter(parser, 'MinAngle', NaN);       % min. angle (SW-enforced; extended position control mode) 
       addParameter(parser, 'MaxAngle', NaN);       % max. angle (SW-enforced; extended position control mode)
       addParameter(parser, 'HomeAngle', NaN);      % zero/home angle (SW-implemented; NOT YET IMPLEMENTED HERE)
+      addParameter(parser, 'IndirectRegsConfigured', NaN);      % zero/home angle (SW-implemented; NOT YET IMPLEMENTED HERE)
       parse(parser, varargin{:});
       input_params = parser.Results;    % struct format
       
-      for id = a_motor_ids
-        if ( ~isnan(input_params.OpMode) )
-          obj.MOTOR_OP_MODE(id+1) = input_params.OpMode;
-        end
-        if ( ~isnan(input_params.MinAngle) )
-          obj.MOTOR_MIN_ANGLE(id+1) = input_params.MinAngle;
-        end
-        if ( ~isnan(input_params.MaxAngle) )
-          obj.MOTOR_MAX_ANGLE(id+1) = input_params.MaxAngle;
-        end
-        if ( ~isnan(input_params.HomeAngle) )
-          obj.MOTOR_HOME_ANGLE(id+1) = input_params.HomeAngle;
-        end
+      inds = a_motor_ids+1;
+      
+      if ( ~isnan(input_params.OpMode) )
+        obj.MOTOR_OP_MODE(inds) = input_params.OpMode;
+      end
+      if ( ~isnan(input_params.MinAngle) )
+        obj.MOTOR_MIN_ANGLE(inds) = input_params.MinAngle;
+      end
+      if ( ~isnan(input_params.MaxAngle) )
+        obj.MOTOR_MAX_ANGLE(inds) = input_params.MaxAngle;
+      end
+      if ( ~isnan(input_params.HomeAngle) )
+        obj.MOTOR_HOME_ANGLE(inds) = input_params.HomeAngle;
+      end
+      if ( ~isnan(input_params.IndirectRegsConfigured) )
+        obj.MOTOR_INDIR_REGS_CONFIGURED(inds) = input_params.IndirectRegsConfigured;
       end
     end
 
@@ -322,7 +331,8 @@ classdef XM430_W350_IO < DXL_IO
     % Output(s):
     %   result:           string summary of motor EEPROM control table state
     %
-    %   TODO: handle comm. failures (for 1+ motor ids)
+    %   TODO: handle comm. failures (for 1+ motor ids); uint8 vals in
+    %   parantheses next to bit print out
     function [ motor_status_str ] = get_motor_eeprom_state( obj, a_motor_ids, a_print_info )
       if ( nargin < 3 )
         a_print_info = false;
@@ -1422,7 +1432,7 @@ classdef XM430_W350_IO < DXL_IO
     %           (Current-based Position Control Mode: -256*2*pi - +256*2*pi rad)
     %   a_vel_profile:  vector of velocity values (rad/sec)
     function set_goal_pos_vel_profile( obj, a_motor_ids, a_pos, a_vel_profile )
-      assert( sum(obj.get_property( motor_ids, 'IndirectRegsConfigured' )) == length(a_motor_ids), ...
+      assert( sum(obj.get_property( a_motor_ids, 'IndirectRegsConfigured' )) == length(a_motor_ids), ...
               '[DXLIO_XM430_W350::set_goal_pos_vel_profile()]: Indirect registers not configured appropriately for one or more motors. Use configure_control_table() first.');
       assert( (length(a_pos) == length(a_motor_ids) && length(a_vel_profile) == length(a_motor_ids)), ...
               '[DXLIO_XM430_W350::set_goal_pos_vel_profile()]: Incompatible input vector lengths!');

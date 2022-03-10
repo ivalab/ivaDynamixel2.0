@@ -65,7 +65,7 @@ classdef DXL_IO < handle
                                         [9600, 57600, 115200, 1000000, 2000000, 3000000, 4000000, 4500000]);
   end
   
-  properties  (Abstract, Access = protected)
+  properties  (Abstract, Constant)
     ANGLE_MIN;          % min. achievable motor position (rad)
     ANGLE_MAX;          % max. achievable motor position (rad)
     ENC_BIT_LEN;        % encoder count bit length
@@ -794,7 +794,7 @@ classdef DXL_IO < handle
     end
 
     function [result] = valid_motor_id( obj, a_motor_ids )
-      result = (a_motor_ids >= obj.DXL_MIN_ID && a_motor_ids <= obj.DXL_MAX_ID);
+      result = (a_motor_ids >= obj.DXL_MIN_ID & a_motor_ids <= obj.DXL_MAX_ID);
     end
   end
 
