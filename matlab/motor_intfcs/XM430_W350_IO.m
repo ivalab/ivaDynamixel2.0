@@ -18,6 +18,7 @@ classdef XM430_W350_IO < DXL_IO
   properties (Access = protected)
     % Motor instance configuration management
     MOTOR_OP_MODE;          % motor ID map: operating (control) modes
+    MOTOR_DRIVE_MODE;       % motor ID map: drive modes
     MOTOR_MIN_ANGLE;        % motor ID map: min. achievable motor position (rad)
     MOTOR_MAX_ANGLE;        % motor ID map: max. achievable motor position (rad)
     MOTOR_HOME_ANGLE;       % motor ID map: encoder count offset for zero rad. position
@@ -159,9 +160,10 @@ classdef XM430_W350_IO < DXL_IO
     
     % Control table indirect addresses and data (i.e. 'custom' fields)
     %   Simultaneous comm. of Goal Position and Velocity Profile
-    ADDR_INDIRECT_POS_VEL          = 168;    %    Indirect register location (address mapping)
-    ADDR_INDIRECT_DATA_POS_VEL     = 224;    %    Indirect data register
-    LEN_INDIRECT_POS_VEL           = 8;      %    Byte length: 8 (LEN_GOAL_POSITION + LEN_PROFILE_VELOCITY)
+    ADDR_INDIRECT_POS_VEL_ACC           = 168;    %    Indirect register location (address mapping)
+    ADDR_INDIRECT_DATA_POS_VEL_ACC      = 224;    %    Indirect data register
+    LEN_INDIRECT_POS_VEL                = 8;      %    Byte length: 8 (LEN_GOAL_POSITION + LEN_PROFILE_VELOCITY)
+    LEN_INDIRECT_POS_VEL_ACC            = 12;     %    Byte length: 12 (LEN_GOAL_POSITION + LEN_PROFILE_VELOCITY + LEN_PROFILE_ACCELERATION)
 
     % XM430-W350 error code flags/masks
     ERRBIT_VOLTAGE      = 1;
@@ -188,6 +190,7 @@ classdef XM430_W350_IO < DXL_IO
       % Motor instance configuration management (default initialization),
       % for possible motor IDs 0 - 253
       obj.MOTOR_OP_MODE = uint8(3*ones(1, 254));    % motor operating mode (uint8)
+      obj.MOTOR_DRIVE_MODE = uint8(0*ones(1, 254)); % motor drive mode (uint8)
       obj.MOTOR_MIN_ANGLE = 0*ones(1, 254);         % min. achievable motor position (rad)
       obj.MOTOR_MAX_ANGLE = 360*ones(1, 254);       % max. achievable motor position (rad)
       obj.MOTOR_HOME_ANGLE = 0*ones(1, 254);        % angle offset for zero/home position (rad) [not to be confused with motor homing offset]
@@ -208,23 +211,30 @@ classdef XM430_W350_IO < DXL_IO
     % 
     % TODO: Call superclass method for more general indirect reg. config.
     function configure_control_table( obj, a_motor_ids )
-      % Goal Position (4 registers) & Profile Velocity (4 registers) 
-      %     ADDR_INDIRECT_POS_VEL -> ADDR_INDIRECT_POS_VEL+15
-      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_GOAL_POSITION, obj.ADDR_INDIRECT_POS_VEL, 2 );
-      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_GOAL_POSITION+1, obj.ADDR_INDIRECT_POS_VEL+2, 2 );
-      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_GOAL_POSITION+2, obj.ADDR_INDIRECT_POS_VEL+4, 2 );
-      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_GOAL_POSITION+3, obj.ADDR_INDIRECT_POS_VEL+6, 2 );
+      % Consecutive arrangement of:
+      %   Goal Position (4 registers), Profile Velocity (4 registers), Profile Acceleration (4 registers) 
+      % Mapped to indirect addresses:
+      %   ADDR_INDIRECT_POS_VEL_ACC -> ADDR_INDIRECT_POS_VEL_ACC+23
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_GOAL_POSITION, obj.ADDR_INDIRECT_POS_VEL_ACC, 2 );              % Goal Position mapping
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_GOAL_POSITION+1, obj.ADDR_INDIRECT_POS_VEL_ACC+2, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_GOAL_POSITION+2, obj.ADDR_INDIRECT_POS_VEL_ACC+4, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_GOAL_POSITION+3, obj.ADDR_INDIRECT_POS_VEL_ACC+6, 2 );
 
-      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY, obj.ADDR_INDIRECT_POS_VEL+8, 2 );
-      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY+1, obj.ADDR_INDIRECT_POS_VEL+10, 2 );
-      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY+2, obj.ADDR_INDIRECT_POS_VEL+12, 2 );
-      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY+3, obj.ADDR_INDIRECT_POS_VEL+14, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY, obj.ADDR_INDIRECT_POS_VEL_ACC+8, 2 );         % Profile Velocity mapping
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY+1, obj.ADDR_INDIRECT_POS_VEL_ACC+10, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY+2, obj.ADDR_INDIRECT_POS_VEL_ACC+12, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_VELOCITY+3, obj.ADDR_INDIRECT_POS_VEL_ACC+14, 2 );
+
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_ACCELERATION, obj.ADDR_INDIRECT_POS_VEL_ACC+16, 2 );    % Profile Acceleration mapping
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_ACCELERATION+1, obj.ADDR_INDIRECT_POS_VEL_ACC+18, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_ACCELERATION+2, obj.ADDR_INDIRECT_POS_VEL_ACC+20, 2 );
+      obj.groupSyncWriteAddr( a_motor_ids, obj.ADDR_PROFILE_ACCELERATION+3, obj.ADDR_INDIRECT_POS_VEL_ACC+22, 2 );
 
       % Toggle indicator flag(s)
-      if ( sum(a_motor_ids == obj.DXL_BROADCAST_ID) )   % list contains broadcast ID
-        obj.set_properties( obj.DXL_MIN_ID:obj.DXL_MAX_ID, 'IndirectRegsConfigured', true)
+      if ( sum(a_motor_ids == obj.DXL_BROADCAST_ID) )   % indirect addresses configured for all motors (broadcast ID)
+        obj.set_properties( obj.DXL_MIN_ID:obj.DXL_MAX_ID, 'IndirectRegsConfigured', true);
       else
-        obj.set_properties( a_motor_ids, 'IndirectRegsConfigured', true)
+        obj.set_properties( a_motor_ids, 'IndirectRegsConfigured', true);
       end
     end
 
@@ -240,9 +250,10 @@ classdef XM430_W350_IO < DXL_IO
       % Parse input parameters
       parser = inputParser;
       addParameter(parser, 'OpMode', NaN, @obj.opmode_is_valid);         % operating (control) mode
-      addParameter(parser, 'MinAngle', NaN);       % min. angle (SW-enforced; extended position control mode) 
-      addParameter(parser, 'MaxAngle', NaN);       % max. angle (SW-enforced; extended position control mode)
-      addParameter(parser, 'HomeAngle', NaN);      % zero/home angle (SW-implemented; NOT YET IMPLEMENTED HERE)
+      addParameter(parser, 'DriveMode', NaN, @obj.drivemode_is_valid);   % drive mode
+      addParameter(parser, 'MinAngle', NaN);                    % min. angle (SW-enforced; extended position control mode) 
+      addParameter(parser, 'MaxAngle', NaN);                    % max. angle (SW-enforced; extended position control mode)
+      addParameter(parser, 'HomeAngle', NaN);                   % zero/home angle (SW-implemented; NOT YET IMPLEMENTED HERE)
       addParameter(parser, 'IndirectRegsConfigured', NaN);      % zero/home angle (SW-implemented; NOT YET IMPLEMENTED HERE)
       parse(parser, varargin{:});
       input_params = parser.Results;    % struct format
@@ -251,6 +262,9 @@ classdef XM430_W350_IO < DXL_IO
       
       if ( ~isnan(input_params.OpMode) )
         obj.MOTOR_OP_MODE(inds) = input_params.OpMode;
+      end
+      if ( ~isnan(input_params.DriveMode) )
+        obj.MOTOR_DRIVE_MODE(inds) = input_params.DriveMode;
       end
       if ( ~isnan(input_params.MinAngle) )
         obj.MOTOR_MIN_ANGLE(inds) = input_params.MinAngle;
@@ -485,12 +499,19 @@ classdef XM430_W350_IO < DXL_IO
     %
     % Input(s):
     %   a_motor_ids:  vector of motor IDs to configure
-    %   a_drive_mode_flag:  vector of drive mode flags (8-bit flag)
-    function set_drive_mode( obj, a_motor_ids, a_drive_mode_flag )
-      assert( (length(a_drive_mode_flag) == length(a_motor_ids) ), ...
+    %   a_drive_mode_flags:  vector of drive mode flags (8-bit flag)
+    function set_drive_mode( obj, a_motor_ids, a_drive_mode_flags )
+      assert( (length(a_drive_mode_flags) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_drive_mode()]: Incompatible input vector lengths!');
 
-      obj.groupSyncWriteAddr( a_motor_ids, a_drive_mode_flag, obj.ADDR_DRIVE_MODE, obj.LEN_DRIVE_MODE );
+      obj.groupSyncWriteAddr( a_motor_ids, a_drive_mode_flags, obj.ADDR_DRIVE_MODE, obj.LEN_DRIVE_MODE );
+
+      % Update motor properties (TODO: put check for broadcast ID inside set_properties)
+      if ( sum(a_motor_ids == obj.DXL_BROADCAST_ID) )   % Drive Mode set for all motors (broadcast ID)
+        obj.set_properties( obj.DXL_MIN_ID:obj.DXL_MAX_ID, 'DriveMode', a_drive_mode_flags);
+      else
+        obj.set_properties( a_motor_ids, 'DriveMode', a_drive_mode_flags);
+      end
     end
 
     % Set motor operating mode value
@@ -509,6 +530,13 @@ classdef XM430_W350_IO < DXL_IO
               '[DXLIO_XM430_W350::set_operating_mode()]: Incompatible input vector lengths!');
 
       obj.groupSyncWriteAddr( a_motor_ids, a_oper_mode_value, obj.ADDR_OPERATING_MODE, obj.LEN_OPERATING_MODE );
+
+      % Update motor properties
+      if ( sum(a_motor_ids == obj.DXL_BROADCAST_ID) )   % Operating Mode set for all motors (broadcast ID)
+        obj.set_properties( obj.DXL_MIN_ID:obj.DXL_MAX_ID, 'OpMode', a_oper_mode_value);
+      else
+        obj.set_properties( a_motor_ids, 'OpMode', a_oper_mode_value);
+      end
     end
 
     % Set motor secondary ID
@@ -1183,21 +1211,25 @@ classdef XM430_W350_IO < DXL_IO
     %
     % Input(s):
     %   a_motor_ids:  vector of motor IDs to configure
-    %   a_accel_profile:  vector of LED on/off values (1, 0)
+    %   a_accel_profile:  vector of acceleration values (>= 0, rad/sec^2)
     %
-    % TODO: conversion from units to count and update documentation
+    % TODO: currently presumes velocity-based profile (Drive Mode)
     function set_acceleration_profile( obj, a_motor_ids, a_accel_profile)
       assert( (length(a_accel_profile) == length(a_motor_ids) ), ...
-              '[DXLIO_XM430_W350::set_acceleration_profile()]: Incompatible input vector lengths!');
+              '[DXLIO_XM430_W350::set_acceleration_profile()]: Incompatible input acceleration lengths!');
       
-      obj.groupSyncWriteAddr( a_motor_ids, a_accel_profile, obj.ADDR_PROFILE_ACCELERATION, obj.LEN_PROFILE_ACCELERATION );
+      accel_profile_cnt = floor(a_accel_profile/(214.577*2*pi/3600)); 
+
+      obj.groupSyncWriteAddr( a_motor_ids, accel_profile_cnt, obj.ADDR_PROFILE_ACCELERATION, obj.LEN_PROFILE_ACCELERATION );
     end
 
     % Set motor velocity profile
     %
     % Input(s):
     %   a_motor_ids:  vector of motor IDs to configure
-    %   a_vel_profile:  vector of velocity values (rad/sec)
+    %   a_vel_profile:  vector of (positive) velocity values (>= 0, rad/sec)
+    %
+    % TODO: currently presumes velocity-based profile (Drive Mode)
     function set_velocity_profile( obj, a_motor_ids, a_vel_profile)
       assert( (length(a_vel_profile) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_velocity_profile()]: Incompatible input vector lengths!');
@@ -1422,6 +1454,102 @@ classdef XM430_W350_IO < DXL_IO
     %   (Based on custom control table indirect register configuration)
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%     % Simultaneously set Goal Position and Velocity Profile
+%     %
+%     % Input(s):
+%     %   a_motor_ids:      vector of motor IDs to configure
+%     %   a_pos:  vector of position values 
+%     %           (Position Control Mode: 0 - 2*pi rad)
+%     %           (Extended Position Control Mode: -256*2*pi - +256*2*pi rad)
+%     %           (Current-based Position Control Mode: -256*2*pi - +256*2*pi rad)
+%     %   a_vel_profile:  vector of velocity values (rad/sec)
+%     function set_goal_pos_vel( obj, a_motor_ids, a_pos, a_vel_profile )
+%       assert( sum(obj.get_property( a_motor_ids, 'IndirectRegsConfigured' )) == length(a_motor_ids), ...
+%               '[DXLIO_XM430_W350::set_goal_pos_vel()]: Indirect registers not configured appropriately for one or more motors. Use configure_control_table() first.');
+%       assert( (length(a_pos) == length(a_motor_ids) && length(a_vel_profile) == length(a_motor_ids)), ...
+%               '[DXLIO_XM430_W350::set_goal_pos_vel()]: Incompatible input vector lengths!');
+% 
+%       group_id = obj.groupSyncWrite( obj.ADDR_INDIRECT_DATA_POS_VEL_ACC, obj.LEN_INDIRECT_POS_VEL );
+% 
+%       % Add motor IDs to write group
+%       for ii = 1:length(a_motor_ids)
+%         % Add goal position to group write config.
+%         pos_cnt_signed = floor(a_pos(ii)/obj.ENC_TO_RAD);
+%         pos_cnt = typecast(int32(pos_cnt_signed), 'uint32');  % convert double -> 32-bit signed int -> 32-bit unsigned int
+%         if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), pos_cnt, int32(obj.LEN_GOAL_POSITION) ) )
+%           error('[DXL_IO::set_goal_pos_vel()] Motor goal position failed to be added to write group (%d) ...', a_motor_ids(ii));
+%         end
+% 
+%         % Add velocity profile to group write config.
+%         vel_profile_cnt = floor(a_vel_profile(ii)/(0.229*2*pi/60));
+%         if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), vel_profile_cnt, int32(obj.LEN_PROFILE_VELOCITY) ) )
+%           error('[DXL_IO::set_goal_pos_vel()] Motor velocity profile failed to be added to write group (%d) ...', a_motor_ids(ii));
+%         end
+%       end
+%       
+%       obj.groupSyncWriteTxPacket( group_id );
+%         
+%       % TODO: check TxRxResult (optional)?
+%       dxl_comm_result = obj.getLastTxRxResult();
+%       if dxl_comm_result ~= obj.COMM_TXSUCCESS
+%           warning('Comm. error: %s\n', obj.getTxRxResult(dxl_comm_result));
+%       end
+%       
+%       obj.groupSyncWriteClearParam( group_id );        % clear write group data (permits group ID re-use)
+%     end
+
+%     % Simultaneously set Goal Position, Velocity Profile and Acceleration
+%     % Profile
+%     %
+%     % Input(s):
+%     %   a_motor_ids:      vector of motor IDs to configure
+%     %   a_pos:  vector of position values 
+%     %           (Position Control Mode: 0 - 2*pi rad)
+%     %           (Extended Position Control Mode: -256*2*pi - +256*2*pi rad)
+%     %           (Current-based Position Control Mode: -256*2*pi - +256*2*pi rad)
+%     %   a_vel_profile:  vector of velocity values (rad/sec)
+%     %   a_accel_profile:  vector of acceleration values (>= 0, rad/sec^2)
+%     function set_goal_pos_vel_accel( obj, a_motor_ids, a_pos, a_vel_profile, a_accel_profile )
+%       assert( sum(obj.get_property( a_motor_ids, 'IndirectRegsConfigured' )) == length(a_motor_ids), ...
+%               '[DXLIO_XM430_W350::set_goal_pos_vel_accel()]: Indirect registers not configured appropriately for one or more motors. Use configure_control_table() first.');
+%       assert( (length(a_pos) == length(a_motor_ids) && length(a_vel_profile) == length(a_motor_ids) && length(a_accel_profile) == length(a_motor_ids)), ...
+%               '[DXLIO_XM430_W350::set_goal_pos_vel_accel()]: Incompatible input vector lengths!');
+% 
+%       group_id = obj.groupSyncWrite( obj.ADDR_INDIRECT_DATA_POS_VEL_ACC, obj.LEN_INDIRECT_POS_VEL_ACC );
+% 
+%       % Add motor IDs to write group
+%       for ii = 1:length(a_motor_ids)
+%         % Add goal position to group write config.
+%         pos_cnt_signed = floor(a_pos(ii)/obj.ENC_TO_RAD);
+%         pos_cnt = typecast(int32(pos_cnt_signed), 'uint32');  % convert double -> 32-bit signed int -> 32-bit unsigned int
+%         if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), pos_cnt, int32(obj.LEN_GOAL_POSITION) ) )
+%           error('[DXL_IO::set_goal_pos_vel_accel()] Motor goal position failed to be added to write group (%d) ...', a_motor_ids(ii));
+%         end
+% 
+%         % Add velocity profile to group write config.
+%         vel_profile_cnt = floor(a_vel_profile(ii)/(0.229*2*pi/60));
+%         if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), vel_profile_cnt, int32(obj.LEN_PROFILE_VELOCITY) ) )
+%           error('[DXL_IO::set_goal_pos_vel_accel()] Motor velocity profile failed to be added to write group (%d) ...', a_motor_ids(ii));
+%         end
+% 
+%         % Add acceleration profile to group write config.
+%         accel_profile_cnt = floor(a_accel_profile/(214.577*2*pi/3600)); 
+%         if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), accel_profile_cnt, int32(obj.LEN_PROFILE_ACCELERATION) ) )
+%           error('[DXL_IO::set_goal_pos_vel_accel()] Motor acceleration profile failed to be added to write group (%d) ...', a_motor_ids(ii));
+%         end
+%       end
+%       
+%       obj.groupSyncWriteTxPacket( group_id );
+%         
+%       % TODO: check TxRxResult (optional)?
+%       dxl_comm_result = obj.getLastTxRxResult();
+%       if dxl_comm_result ~= obj.COMM_TXSUCCESS
+%           warning('Comm. error: %s\n', obj.getTxRxResult(dxl_comm_result));
+%       end
+%       
+%       obj.groupSyncWriteClearParam( group_id );        % clear write group data (permits group ID re-use)
+%     end
+
     % Simultaneously set Goal Position and Velocity Profile
     %
     % Input(s):
@@ -1431,27 +1559,76 @@ classdef XM430_W350_IO < DXL_IO
     %           (Extended Position Control Mode: -256*2*pi - +256*2*pi rad)
     %           (Current-based Position Control Mode: -256*2*pi - +256*2*pi rad)
     %   a_vel_profile:  vector of velocity values (rad/sec)
-    function set_goal_pos_vel_profile( obj, a_motor_ids, a_pos, a_vel_profile )
-      assert( sum(obj.get_property( a_motor_ids, 'IndirectRegsConfigured' )) == length(a_motor_ids), ...
-              '[DXLIO_XM430_W350::set_goal_pos_vel_profile()]: Indirect registers not configured appropriately for one or more motors. Use configure_control_table() first.');
+    function set_goal_pos_vel( obj, a_motor_ids, a_pos, a_vel_profile )
       assert( (length(a_pos) == length(a_motor_ids) && length(a_vel_profile) == length(a_motor_ids)), ...
-              '[DXLIO_XM430_W350::set_goal_pos_vel_profile()]: Incompatible input vector lengths!');
+              '[DXLIO_XM430_W350::set_goal_pos_vel()]: Incompatible input vector lengths!');
 
-      group_id = obj.groupSyncWrite( obj.ADDR_INDIRECT_DATA_POS_VEL, obj.LEN_INDIRECT_POS_VEL );
+      group_id = obj.groupSyncWrite( obj.ADDR_PROFILE_VELOCITY, obj.LEN_PROFILE_VELOCITY + obj.LEN_GOAL_POSITION);
 
       % Add motor IDs to write group
       for ii = 1:length(a_motor_ids)
+        % Add velocity profile to group write config.
+        vel_profile_cnt = floor(a_vel_profile(ii)/(0.229*2*pi/60));
+        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), vel_profile_cnt, int32(obj.LEN_PROFILE_VELOCITY) ) )
+          error('[DXL_IO::set_goal_pos_vel()] Motor velocity profile failed to be added to write group (%d) ...', a_motor_ids(ii));
+        end
+
         % Add goal position to group write config.
         pos_cnt_signed = floor(a_pos(ii)/obj.ENC_TO_RAD);
         pos_cnt = typecast(int32(pos_cnt_signed), 'uint32');  % convert double -> 32-bit signed int -> 32-bit unsigned int
         if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), pos_cnt, int32(obj.LEN_GOAL_POSITION) ) )
-          error('[DXL_IO::set_goal_pos_vel_profile()] Motor goal position failed to be added to write group (%d) ...', a_motor_ids(ii));
+          error('[DXL_IO::set_goal_pos_vel()] Motor goal position failed to be added to write group (%d) ...', a_motor_ids(ii));
+        end
+      end
+      
+      obj.groupSyncWriteTxPacket( group_id );
+        
+      % TODO: check TxRxResult (optional)?
+      dxl_comm_result = obj.getLastTxRxResult();
+      if dxl_comm_result ~= obj.COMM_TXSUCCESS
+          warning('Comm. error: %s\n', obj.getTxRxResult(dxl_comm_result));
+      end
+      
+      obj.groupSyncWriteClearParam( group_id );        % clear write group data (permits group ID re-use)
+    end
+
+    % Simultaneously set Goal Position, Velocity Profile and Acceleration
+    % Profile
+    %
+    % Input(s):
+    %   a_motor_ids:      vector of motor IDs to configure
+    %   a_pos:  vector of position values 
+    %           (Position Control Mode: 0 - 2*pi rad)
+    %           (Extended Position Control Mode: -256*2*pi - +256*2*pi rad)
+    %           (Current-based Position Control Mode: -256*2*pi - +256*2*pi rad)
+    %   a_vel_profile:  vector of velocity values (rad/sec)
+    %   a_accel_profile:  vector of acceleration values (>= 0, rad/sec^2)
+    function set_goal_pos_vel_accel( obj, a_motor_ids, a_pos, a_vel_profile, a_accel_profile )
+      assert( (length(a_pos) == length(a_motor_ids) && length(a_vel_profile) == length(a_motor_ids) && length(a_accel_profile) == length(a_motor_ids)), ...
+              '[DXLIO_XM430_W350::set_goal_pos_vel_accel()]: Incompatible input vector lengths!');
+
+      group_id = obj.groupSyncWrite( obj.ADDR_PROFILE_ACCELERATION, ...
+                                      obj.LEN_PROFILE_ACCELERATION + obj.LEN_PROFILE_VELOCITY + obj.LEN_GOAL_POSITION );
+
+      % Add motor IDs to write group
+      for ii = 1:length(a_motor_ids)
+        % Add acceleration profile to group write config.
+        accel_profile_cnt = floor(a_accel_profile/(214.577*2*pi/3600)); 
+        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), accel_profile_cnt, int32(obj.LEN_PROFILE_ACCELERATION) ) )
+          error('[DXL_IO::set_goal_pos_vel_accel()] Motor acceleration profile failed to be added to write group (%d) ...', a_motor_ids(ii));
         end
 
         % Add velocity profile to group write config.
         vel_profile_cnt = floor(a_vel_profile(ii)/(0.229*2*pi/60));
         if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), vel_profile_cnt, int32(obj.LEN_PROFILE_VELOCITY) ) )
-          error('[DXL_IO::set_goal_pos_vel_profile()] Motor velocity profile failed to be added to write group (%d) ...', a_motor_ids(ii));
+          error('[DXL_IO::set_goal_pos_vel_accel()] Motor velocity profile failed to be added to write group (%d) ...', a_motor_ids(ii));
+        end
+
+        % Add goal position to group write config.
+        pos_cnt_signed = floor(a_pos(ii)/obj.ENC_TO_RAD);
+        pos_cnt = typecast(int32(pos_cnt_signed), 'uint32');  % convert double -> 32-bit signed int -> 32-bit unsigned int
+        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), pos_cnt, int32(obj.LEN_GOAL_POSITION) ) )
+          error('[DXL_IO::set_goal_pos_vel_accel()] Motor goal position failed to be added to write group (%d) ...', a_motor_ids(ii));
         end
       end
       
@@ -1508,6 +1685,10 @@ classdef XM430_W350_IO < DXL_IO
                   a_opmode == obj.OPMODE_EXT_POS_CNTRL || ...
                   a_opmode == obj.OPMODE_CURRENT_POS_CNTRL || ...
                   a_opmode == obj.OPMODE_PWM_CNTRL );
+    end
+
+    function [ result ] = drivemode_is_valid( obj, a_drivemode )
+      result = ( bitand(a_drivemode, 242) == 0 );   % Bits 1, 4, 5, 6, 7 must be 0
     end
 
   end

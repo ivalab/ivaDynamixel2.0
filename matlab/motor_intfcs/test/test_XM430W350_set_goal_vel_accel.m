@@ -2,12 +2,15 @@
 % Test script: test_XM430W350_set_goal_vel.m
 % 
 % Description: 
-%   Instantiate XM430_W350_IO motor IO class and command motor position 
-%   and velocity.
+%   Instantiate XM430_W350_IO motor IO class and command motor position, 
+%   velocity and acceleration.
+% 
+% TODO: Simult. command accel with pos and vel not currently working -
+% assume doing something wrong; need to troubleshoot
 % 
 
 % [0] == Script parameter(s)
-PORT_NAME = '/dev/ttyUSB0';
+PORT_NAME = '/dev/ttyUSB1';
 PORT_BAUD = 1000000;
 
 MOTOR_ID = 1;
@@ -61,8 +64,12 @@ traj_duration = 10; traj_min_vel = (25)*pi/180;
 traj_time = linspace(0, traj_duration, ceil(traj_duration/0.1)+1);   % sec.
 traj_pos = (90)*pi/180*sin(2*pi*(0.2)*traj_time);                    % rad
 
-traj_dt = [ traj_time(2)-traj_time(1), diff(traj_time) ];
-traj_vel = max(abs([ pi/4, diff(traj_pos)./diff(traj_time) ]), traj_min_vel);  % positive 'velocity' only (rad/s)
+traj_dt = gradient(traj_time);
+traj_vel = gradient(traj_pos)./gradient(traj_time); traj_vel(1) = pi/4;
+traj_vel = max(abs(traj_vel), traj_min_vel);  % positive 'velocity' only (rad/s)
+
+traj_accel = gradient(gradient(traj_pos)./gradient(traj_time))./gradient(traj_time);
+traj_accel = max(abs([ 2*pi/3, diff(traj_pos)./diff(traj_time) ]), traj_min_vel);  % positive 'acceleration' only (rad/s^2)
 
 % Motor position & velocity
 %   Enable motor torque
@@ -74,15 +81,19 @@ pause(1);
 %   Command trajectory
 goal_pos = traj_pos(1);  % rad
 des_vel = traj_vel(1);   % rad/s
-fprintf('Commanding initial position: (%.2f deg, %.2f deg/s) for motor ID: %d.\n', goal_pos*180/pi, des_vel*180/pi, MOTOR_ID);
-dxlio.set_goal_pos_vel( MOTOR_ID, goal_pos, des_vel );
+des_accel = traj_accel(1); % rad/s^2
+fprintf('Commanding initial position: (%.2f deg, %.2f deg/s, %.2f deg/s^2) for motor ID: %d.\n', goal_pos*180/pi, des_vel*180/pi, des_accel*180/pi, MOTOR_ID);
+dxlio.set_goal_pos_vel_accel( MOTOR_ID, goal_pos, des_vel, des_accel );
+% dxlio.set_goal_pos_vel( MOTOR_ID, goal_pos, des_vel );
 pause(2);
 
 fprintf('Beginning trajectory ...\n');
 for ii = 2:length(traj_pos)
   goal_pos = traj_pos(ii);  % rad
   des_vel = traj_vel(ii);   % rad/s
-  dxlio.set_goal_pos_vel( MOTOR_ID, goal_pos, des_vel );
+  des_accel = traj_accel(ii); % rad/s^2
+  dxlio.set_goal_pos_vel_accel( MOTOR_ID, goal_pos, des_vel, des_accel );
+%   dxlio.set_goal_pos_vel( MOTOR_ID, goal_pos, des_vel );
   pause(traj_dt(ii)*1.0);
 end
 pause(1);
