@@ -69,7 +69,8 @@ traj_vel = gradient(traj_pos)./gradient(traj_time); traj_vel(1) = pi/4;
 traj_vel = max(abs(traj_vel), traj_min_vel);  % positive 'velocity' only (rad/s)
 
 traj_accel = gradient(gradient(traj_pos)./gradient(traj_time))./gradient(traj_time);
-traj_accel = max(abs([ 2*pi/3, diff(traj_pos)./diff(traj_time) ]), traj_min_vel);  % positive 'acceleration' only (rad/s^2)
+traj_accel = 10*max(abs([ 2*pi/3, diff(traj_pos)./diff(traj_time) ]), traj_min_vel);  % positive 'acceleration' only (rad/s^2) [had to scale by 10 for satisfactory traj. tracking]
+% traj_accel = 30*(214.577*2*pi/3600)*ones(size(traj_vel));                           % hard-coded single acceleration value 
 
 % Motor position & velocity
 %   Enable motor torque
@@ -84,7 +85,6 @@ des_vel = traj_vel(1);   % rad/s
 des_accel = traj_accel(1); % rad/s^2
 fprintf('Commanding initial position: (%.2f deg, %.2f deg/s, %.2f deg/s^2) for motor ID: %d.\n', goal_pos*180/pi, des_vel*180/pi, des_accel*180/pi, MOTOR_ID);
 dxlio.set_goal_pos_vel_accel( MOTOR_ID, goal_pos, des_vel, des_accel );
-% dxlio.set_goal_pos_vel( MOTOR_ID, goal_pos, des_vel );
 pause(2);
 
 fprintf('Beginning trajectory ...\n');
@@ -92,8 +92,9 @@ for ii = 2:length(traj_pos)
   goal_pos = traj_pos(ii);  % rad
   des_vel = traj_vel(ii);   % rad/s
   des_accel = traj_accel(ii); % rad/s^2
+
   dxlio.set_goal_pos_vel_accel( MOTOR_ID, goal_pos, des_vel, des_accel );
-%   dxlio.set_goal_pos_vel( MOTOR_ID, goal_pos, des_vel );
+
   pause(traj_dt(ii)*1.0);
 end
 pause(1);

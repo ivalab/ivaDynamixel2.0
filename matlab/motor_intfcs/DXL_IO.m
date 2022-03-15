@@ -533,7 +533,7 @@ classdef DXL_IO < handle
 
       % Add motor IDs to write group
       for ii = 1:length(a_motor_ids)
-        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), a_data(ii), int32(a_data_length) ) )
+        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), a_data(ii), a_data_length ) )
           error('[DXL_IO::groupSyncWriteAddr()] Motor data failed to be added to write group (%d) ...', a_motor_ids(ii));
         end
       end

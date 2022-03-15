@@ -1569,14 +1569,14 @@ classdef XM430_W350_IO < DXL_IO
       for ii = 1:length(a_motor_ids)
         % Add velocity profile to group write config.
         vel_profile_cnt = floor(a_vel_profile(ii)/(0.229*2*pi/60));
-        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), vel_profile_cnt, int32(obj.LEN_PROFILE_VELOCITY) ) )
+        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), vel_profile_cnt, obj.LEN_PROFILE_VELOCITY ) )
           error('[DXL_IO::set_goal_pos_vel()] Motor velocity profile failed to be added to write group (%d) ...', a_motor_ids(ii));
         end
 
         % Add goal position to group write config.
         pos_cnt_signed = floor(a_pos(ii)/obj.ENC_TO_RAD);
         pos_cnt = typecast(int32(pos_cnt_signed), 'uint32');  % convert double -> 32-bit signed int -> 32-bit unsigned int
-        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), pos_cnt, int32(obj.LEN_GOAL_POSITION) ) )
+        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), pos_cnt, obj.LEN_GOAL_POSITION ) )
           error('[DXL_IO::set_goal_pos_vel()] Motor goal position failed to be added to write group (%d) ...', a_motor_ids(ii));
         end
       end
@@ -1614,20 +1614,20 @@ classdef XM430_W350_IO < DXL_IO
       for ii = 1:length(a_motor_ids)
         % Add acceleration profile to group write config.
         accel_profile_cnt = floor(a_accel_profile/(214.577*2*pi/3600)); 
-        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), accel_profile_cnt, int32(obj.LEN_PROFILE_ACCELERATION) ) )
+        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), accel_profile_cnt, obj.LEN_PROFILE_ACCELERATION ) )
           error('[DXL_IO::set_goal_pos_vel_accel()] Motor acceleration profile failed to be added to write group (%d) ...', a_motor_ids(ii));
         end
 
         % Add velocity profile to group write config.
         vel_profile_cnt = floor(a_vel_profile(ii)/(0.229*2*pi/60));
-        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), vel_profile_cnt, int32(obj.LEN_PROFILE_VELOCITY) ) )
+        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), vel_profile_cnt, obj.LEN_PROFILE_VELOCITY ) )
           error('[DXL_IO::set_goal_pos_vel_accel()] Motor velocity profile failed to be added to write group (%d) ...', a_motor_ids(ii));
         end
 
         % Add goal position to group write config.
         pos_cnt_signed = floor(a_pos(ii)/obj.ENC_TO_RAD);
         pos_cnt = typecast(int32(pos_cnt_signed), 'uint32');  % convert double -> 32-bit signed int -> 32-bit unsigned int
-        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), pos_cnt, int32(obj.LEN_GOAL_POSITION) ) )
+        if ( ~obj.groupSyncWriteAddParam( group_id, a_motor_ids(ii), pos_cnt, obj.LEN_GOAL_POSITION ) )
           error('[DXL_IO::set_goal_pos_vel_accel()] Motor goal position failed to be added to write group (%d) ...', a_motor_ids(ii));
         end
       end
