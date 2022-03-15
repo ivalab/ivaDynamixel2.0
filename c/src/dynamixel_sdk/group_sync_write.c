@@ -184,7 +184,7 @@ uint8_t groupSyncWriteAddParam(int group_num, uint8_t id, uint32_t data, uint16_
     default:
       return False;
   }
-  groupData[group_num].data_list[data_num].data_end = input_length;
+  groupData[group_num].data_list[data_num].data_end += input_length;
 
   groupData[group_num].is_param_changed = True;
   return True;
