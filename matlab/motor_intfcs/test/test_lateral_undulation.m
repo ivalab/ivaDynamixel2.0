@@ -10,9 +10,9 @@ LU_CYCLES = 10;
 
 % MOTOR_IDS = 1:12;   % 1 through 12 -> tail to head
 MOTOR_IDS = 1;   % 1 through 12 -> tail to head
-JOINT_SELECT = 1;
+JOINT_SELECT = 2;
 
-PORT_NAME = '/dev/ttyUSB0';
+PORT_NAME = '/dev/ttyUSB3';
 PORT_BAUD = 1000000;
 
 
@@ -31,6 +31,9 @@ tic; [ theta_lu, vel_lu, joint_compl_margin_lu, time_lu ] =  lateral_undulation_
 tmp = ones(11, size(joint_compl_margin_lu, 2));
 tmp(1:2:11, :) = joint_compl_margin_lu;
 joint_compl_margin_lu = tmp;
+
+min_vel = (50)*pi/180;
+vel_lu = max(abs(vel_lu), min_vel);  % positive 'velocity' only (rad/s)
 
 
 % [3] == Execute demo
@@ -63,12 +66,6 @@ fprintf('Setting operating mode: Extended Position Mode.\n');
 dxlio.set_operating_mode( MOTOR_IDS, oper_mode )
 pause(1);
 
-%   Configure motors indirect registers (simultaneous position & velocity
-%   commands)
-fprintf('Configuring motor control table.\n\n');
-dxlio.configure_control_table( MOTOR_IDS );
-pause(1);
-
 
 %   Query user to transition robot to initial gait shape
 input('Press <Enter> to command initial gait shape ...');
@@ -83,7 +80,7 @@ pause(1);
 %   Command initial gait shape
 goal_pos = theta_lu(JOINT_SELECT, 1);  % rad
 goal_vel = vel_lu(JOINT_SELECT, 1);
-dxlio.set_goal_pos_vel_profile( MOTOR_IDS, goal_pos, goal_vel );
+dxlio.set_goal_pos_vel( MOTOR_IDS, goal_pos, goal_vel );
 pause(2);
 
 %   Query user to start gait
@@ -96,9 +93,9 @@ for ii = 1:size(time_lu, 2)
   goal_vel = vel_lu(JOINT_SELECT, ii);
 
   % Command motor position/velocity
-  dxlio.set_goal_pos_vel_profile( MOTOR_IDS, goal_pos, goal_vel );
+  dxlio.set_goal_pos_vel( MOTOR_IDS, goal_pos, goal_vel );
 
-  pause(dt*0.9);
+  pause(dt*1.0);
 end
 pause(1);
 
