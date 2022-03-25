@@ -10,7 +10,7 @@
 % 
 
 % [0] == Script parameter(s)
-PORT_NAME = '/dev/ttyUSB1';
+PORT_NAME = '/dev/ttyUSB0';
 PORT_BAUD = 1000000;
 
 MOTOR_ID = 1;
@@ -96,6 +96,15 @@ for ii = 2:length(traj_pos)
   dxlio.set_goal_pos_vel_accel( MOTOR_ID, goal_pos, des_vel, des_accel );
 
   pause(traj_dt(ii)*1.0);
+
+%   [ read_goal_pos ] = dxlio.groupSyncReadAddr( MOTOR_ID, dxlio.ADDR_GOAL_POSITION, dxlio.LEN_GOAL_POSITION);
+%   [ read_vel_prof ] = dxlio.groupSyncReadAddr( MOTOR_ID, dxlio.ADDR_PROFILE_VELOCITY, dxlio.LEN_PROFILE_VELOCITY);
+%   [ read_acc_prof ] = dxlio.groupSyncReadAddr( MOTOR_ID, dxlio.ADDR_PROFILE_ACCELERATION, dxlio.LEN_PROFILE_ACCELERATION);
+% 
+%   fprintf('[WRITE] Pos: %.2f rad, Vel: %.2f rad/s, Acc: %.2f rad/s^2 \n', ...
+%             goal_pos, des_vel, des_accel);
+%   fprintf('[READ] Pos: %.2f rad, Vel: %.2f rad/s, Acc: %.2f rad/s^2 \n\n', ...
+%             read_goal_pos*dxlio.ENC_TO_RAD, read_vel_prof*(0.229*2*pi/60), read_acc_prof*(214.577*2*pi/3600));
 end
 pause(1);
 fprintf('Completed trajectory.\n\n');
