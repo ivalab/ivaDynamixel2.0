@@ -17,19 +17,17 @@ classdef DXL_IO_Impl < DXL_IO
   % Detailed explanation goes here
 
   properties (Access = protected)
-    % Most properties N/A in implementated DXL_IO base class
     PROTOCOL_VERSION = 2.0;   % default DXL comm. protocol
-    
+  end
+  
+  properties (Constant)
+    % Most properties N/A in implementated DXL_IO base class
     ANGLE_MIN = -1;
     ANGLE_MAX = -1;
     ENC_BIT_LEN = -1;
 
     ENC_TO_RAD = -1;
     ENC_HOME_POS = -1;
-  end
-  
-  properties (Constant)
-
   end
   
   methods  (Access = public)

@@ -21,10 +21,15 @@ classdef DXL_IO < handle
     lib_file;               % Binary shared library filename
     
     port_hdl = '';
-    baud_rate = 1;
+    port_dev_name = '';
+    port_baud_rate = 1;
     port_open = false;
   end
   
+  properties  (Abstract, Access = protected)
+    PROTOCOL_VERSION;
+  end
+
   properties (Constant)
     % Dynamixel packet instructions
     INSTR_PING          = 1;
@@ -73,8 +78,6 @@ classdef DXL_IO < handle
     ENC_TO_RAD;         % (rad/encoder cnts)
     ENC_HOME_POS;       % Encoder count offset for zero rad. position 
                         %   (Note: motor-dependent applicability)
-    
-    PROTOCOL_VERSION;
   end
   
   methods  (Access = public)
@@ -176,6 +179,7 @@ classdef DXL_IO < handle
       
       VALUE = openPort( obj.port_hdl );  % open port
       obj.port_open = logical(VALUE);
+      obj.port_dev_name = a_port_dev;
       
       % Set baud rate if specified
       if ( nargin > 2 )
@@ -199,7 +203,7 @@ classdef DXL_IO < handle
       
       result = setBaudRate( obj.port_hdl, a_baud_rate );
       if ( result )
-        obj.baud_rate = a_baud_rate;
+        obj.port_baud_rate = a_baud_rate;
       end
     end
     
@@ -244,6 +248,27 @@ classdef DXL_IO < handle
       packetHandler();
     end
  
+
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Multi-motor management utilities
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function [] = scanForMotors( obj, a_id_list )
+      obj.is_port_open( 'scanForMotors()' );  % assert a port is currently open
+
+      %   Scan motor IDs
+      fprintf('Scan results: \n Port: %s\n Baud Rate: %d bps\n==================\n', obj.port_dev_name, obj.port_baud_rate);
+      for ii = 1:length(a_id_list)
+        ping_result = obj.pingGetModelNum( a_id_list(ii) );
+        if ( ~ping_result )
+          fprintf('[not found] Motor ID: %d -> no response.\n', a_id_list(ii));  
+        else
+          fprintf('[FOUND] Motor ID: %d -> Model number: %d (%s).\n', a_id_list(ii), ping_result, obj.MODEL_NUM2NAME(ping_result));
+        end
+        pause(0.2);
+      end
+      fprintf('\n');
+    end
+
 
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Dynamixel high-level motor interface (e.g. packet construction, Tx/Rx)

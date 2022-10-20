@@ -11,6 +11,7 @@
 %              To be safe, stay on 1 million baud.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 classdef XM430_W350_IO < DXL_IO
   % This Class serves to organize the functions that command the new motors
   % Detailed explanation goes here
@@ -24,6 +25,8 @@ classdef XM430_W350_IO < DXL_IO
     MOTOR_HOME_ANGLE;       % motor ID map: encoder count offset for zero rad. position
 
     MOTOR_INDIR_REGS_CONFIGURED;      % motor ID map: boolean flags track whether indirect addresses configured
+
+    PROTOCOL_VERSION = 2.0;
   end
     
   properties (Constant)
@@ -36,8 +39,6 @@ classdef XM430_W350_IO < DXL_IO
     ENC_HOME_POS = 0*180/pi;        % Encoder count offset for zero rad. position 
                                     %   (Note: motor-dependent applicability)
     
-    PROTOCOL_VERSION = 2.0;
-
     % Dynamixel control table field addresses
     % ==== EEPROM Table ==== 
     ADDR_MODEL_NUMBER               = 0;

@@ -33,18 +33,20 @@ openPortResult = dxlio.openPort( PORT_NAME, PORT_BAUD );
 fprintf('Open port success: %d.\n\n', openPortResult);
 
 %   Scan motor IDs
-fprintf('Scan results: \n Port: %s\n Baud Rate: %d\n==================\n', PORT_NAME, PORT_BAUD);
-for ii = 1:length(MOTOR_IDS)
-  ping_result = dxlio.pingGetModelNum( MOTOR_IDS(ii) );
-  if ( ~ping_result )
-    fprintf('[not found] Motor ID: %d -> no response.\n', MOTOR_IDS(ii));  
-  else
-    fprintf('[FOUND] Motor ID: %d -> Model number: %d.\n', MOTOR_IDS(ii), ping_result);
-  end
-  pause(0.2);
-end
-fprintf('\n');
-pause(2);
+dxlio.scanForMotors( MOTOR_IDS )
+
+% fprintf('Scan results: \n Port: %s\n Baud Rate: %d\n==================\n', PORT_NAME, PORT_BAUD);
+% for ii = 1:length(MOTOR_IDS)
+%   ping_result = dxlio.pingGetModelNum( MOTOR_IDS(ii) );
+%   if ( ~ping_result )
+%     fprintf('[not found] Motor ID: %d -> no response.\n', MOTOR_IDS(ii));  
+%   else
+%     fprintf('[FOUND] Motor ID: %d -> Model number: %d.\n', MOTOR_IDS(ii), ping_result);
+%   end
+%   pause(0.2);
+% end
+% fprintf('\n');
+% pause(2);
 
 %   Clean-up
 fprintf('Closing DXL port: %s.\n', PORT_NAME);
