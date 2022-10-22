@@ -34,9 +34,11 @@ fprintf('Pinging target motors ...\n');
 for ii = 1:length(MOTOR_IDS)
   ping_result = dxlio.pingGetModelNum( MOTOR_IDS(ii) );
   if ( ~ping_result )
-    fprintf('\nPing result -> no response!');
+%     fprintf('\nPing result -> no response!');
+    fprintf('[not found] Motor ID: %d -> no response.\n', MOTOR_IDS(ii));
   else
-    fprintf('Ping result -> Model number: %d, for Motor ID: %d.\n', ping_result, MOTOR_IDS(ii));
+%     fprintf('Ping result -> Model number: %d, for Motor ID: %d.\n', ping_result, MOTOR_IDS(ii));
+    fprintf('[FOUND] Motor ID: %d -> Model number: %d (%s).\n', MOTOR_IDS(ii), ping_result, DXL_IO_Impl.MODEL_NUM2NAME(ping_result));
   end
 end
 fprintf('\n');
@@ -45,7 +47,7 @@ pause(1);
 %   Enable motor torque
 torque_state = [1, 1];
 for ii = 1:length(MOTOR_IDS)
-  fprintf('Enabling torque: %d, for motor ID: %d.\n', torque_state(ii), MOTOR_IDS(ii));
+  fprintf('[Motor ID: %d] Enabling torque: %d.\n', MOTOR_IDS(ii), torque_state(ii));
 end
 fprintf('\n');
 dxlio.set_torque_enable( MOTOR_IDS, torque_state );
@@ -54,11 +56,21 @@ pause(1);
 %   Command motor position
 goal_pos = [45, 90]*pi/180;  % rad
 for ii = 1:length(MOTOR_IDS)
-  fprintf('Commanding goal position: %d deg, for motor ID: %d.\n', goal_pos(ii)*180/pi, MOTOR_IDS(ii));
+  fprintf('[Motor ID: %d] Commanding goal position: %d deg.\n', MOTOR_IDS(ii), goal_pos(ii)*180/pi);
 end
 fprintf('\n');
 dxlio.set_goal_position( MOTOR_IDS, goal_pos );
 pause(3);
+
+%   Disable motor torque
+torque_state = [0, 0];
+for ii = 1:length(MOTOR_IDS)
+  fprintf('[Motor ID: %d] Disabling torque: %d.\n', MOTOR_IDS(ii), torque_state(ii));
+end
+fprintf('\n');
+dxlio.set_torque_enable( MOTOR_IDS, torque_state );
+pause(1);
+
 
 %   Clean-up
 fprintf('Closing DXL port: %s.\n', PORT_NAME);

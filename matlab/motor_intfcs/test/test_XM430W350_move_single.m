@@ -9,7 +9,7 @@
 PORT_NAME = '/dev/ttyUSB0';
 PORT_BAUD = 1000000;
 
-MOTOR_ID = 8;
+MOTOR_ID = 1;
 
 
 % [1] == Script setup
@@ -33,28 +33,32 @@ fprintf('Open port success: %d.\n\n', openPortResult);
 fprintf('Pinging target motor ...\n');
 ping_result = dxlio.pingGetModelNum( MOTOR_ID );
 if ( ~ping_result )
-  fprintf('\nPing result -> no response!');
+%   fprintf('\nPing result -> no response!');
+  fprintf('[not found] Motor ID: %d -> no response.\n', MOTOR_ID);
 else
-  fprintf('Ping result -> Model number: %d, for Motor ID: %d.\n\n', ping_result, MOTOR_ID);
+%   fprintf('Ping result -> Model number: %d, for Motor ID: %d.\n\n', ping_result, MOTOR_ID);
+  fprintf('[FOUND] Motor ID: %d -> Model number: %d (%s).\n', MOTOR_ID, ping_result, DXL_IO_Impl.MODEL_NUM2NAME(ping_result));
 end
 pause(1);
 
 %   Enable motor torque
 torque_state = 1;
-fprintf('Enabling torque: %d, for motor ID: %d.\n\n', torque_state, MOTOR_ID);
+fprintf('[Motor ID: %d] Enabling torque: %d.\n\n', MOTOR_ID, torque_state);
 dxlio.set_torque_enable( MOTOR_ID, torque_state );
 pause(1);
 
 %   Command motor position
 goal_pos = (0)*pi/180;  % rad
-fprintf('Commanding goal position: %d deg, for motor ID: %d.\n\n', goal_pos*180/pi, MOTOR_ID);
+fprintf('[Motor ID: %d] Commanding goal position: %d deg.\n\n', MOTOR_ID, goal_pos*180/pi);
 dxlio.set_goal_position( MOTOR_ID, goal_pos );
 pause(2);
 
+%   Disable motor torque
 torque_state = 0;
-fprintf('Disabling torque: %d, for motor ID: %d.\n\n', torque_state, MOTOR_ID);
+fprintf('[Motor ID: %d] Disabling torque: %d.\n\n', MOTOR_ID, torque_state);
 dxlio.set_torque_enable( MOTOR_ID, torque_state );
 pause(1);
+
 
 %   Clean-up
 fprintf('Closing DXL port: %s.\n', PORT_NAME);
