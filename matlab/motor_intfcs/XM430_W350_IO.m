@@ -686,7 +686,7 @@ classdef XM430_W350_IO < DXL_IO
       assert( (length(a_max_pos_limit) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_max_position_limit()]: Incompatible input vector lengths!');
       
-      max_pos_limit_cnt = floor(a_max_pos_limit/obj.ENC_TO_RAD);
+      max_pos_limit_cnt = floor(a_max_pos_limit/obj.ENC_TO_RAD); % TODO: typecast to uint32?
 
       obj.groupSyncWriteAddr( a_motor_ids, max_pos_limit_cnt, obj.ADDR_MAX_POSITION_LIMIT, obj.LEN_MAX_POSITION_LIMIT );
     end
@@ -702,7 +702,7 @@ classdef XM430_W350_IO < DXL_IO
       assert( (length(a_min_pos_limit) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_min_position_limit()]: Incompatible input vector lengths!');
       
-      min_pos_limit_cnt = floor(a_min_pos_limit/obj.ENC_TO_RAD);
+      min_pos_limit_cnt = floor(a_min_pos_limit/obj.ENC_TO_RAD); % TODO: typecast to uint32?
 
       obj.groupSyncWriteAddr( a_motor_ids, min_pos_limit_cnt, obj.ADDR_MIN_POSITION_LIMIT, obj.LEN_MIN_POSITION_LIMIT );
     end
