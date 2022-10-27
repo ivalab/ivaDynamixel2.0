@@ -379,7 +379,7 @@ classdef XM430_W350_IO < DXL_IO
         motor_status_str{ii} = sprintf('%s\t Baud Rate: %d bps\n', motor_status_str{ii}, result_baudrates(ii));
         motor_status_str{ii} = sprintf('%s\t Return Delay Time: %.2f us\n', motor_status_str{ii}, result_delaytimes(ii));
         motor_status_str{ii} = sprintf('%s\t Drive Mode: %s [8-bit flag]\n', motor_status_str{ii}, dec2bin(result_drivemode(ii), 8));
-        motor_status_str{ii} = sprintf('%s\t Operating Mode: %s [8-bit flag]\n', motor_status_str{ii}, dec2bin(result_opmode(ii), 8));
+        motor_status_str{ii} = sprintf('%s\t Operating Mode: %d\n', motor_status_str{ii}, result_opmode(ii));
         motor_status_str{ii} = sprintf('%s\t Secondary ID: %d\n', motor_status_str{ii}, result_secid(ii));
         motor_status_str{ii} = sprintf('%s\t DXL Comm. Protocol: %.1f\n', motor_status_str{ii}, result_commtype(ii));
         motor_status_str{ii} = sprintf('%s\t Homing Offset: %.4f rad (%.3f deg)\n', motor_status_str{ii}, result_homingoffset(ii), result_homingoffset(ii)*180/pi);

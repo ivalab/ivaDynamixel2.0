@@ -1,12 +1,12 @@
 % 
-% Test script: test_XM430W350_led_onoff.m
+% Test script: test_XM430W350_homing_offset.m
 % 
 % Description: 
-%   Instantiate XM430_W350_IO motor IO class and update LED motor state.
+%   Instantiate XM430_W350_IO motor IO class and update motor homing offset.
 % 
 
 % [0] == Script parameter(s)
-PORT_NAME = '/dev/ttyUSB0';
+PORT_NAME = '/dev/ttyUSB1';
 PORT_BAUD = 1000000;
 
 MOTOR_ID = 12;
@@ -69,7 +69,7 @@ dxlio.set_torque_enable( MOTOR_ID, torque_state );
 pause(1);
 
 %     Set homing offset
-homing_offset = 45*pi/180;  % rad
+homing_offset = -180*pi/180;  % rad
 fprintf('Configuring homing offset: %.4f rad, for motor ID: %d.\n\n', homing_offset, MOTOR_ID);
 dxlio.set_homing_offset( MOTOR_ID, homing_offset );
 pause(1);
@@ -91,7 +91,7 @@ dxlio.set_torque_enable( MOTOR_ID, torque_state );
 pause(1);
 
 %     Command motor position
-goal_pos = (0)*pi/180;  % rad
+goal_pos = (90)*pi/180;  % rad
 fprintf('Commanding goal position: %d deg, for motor ID: %d.\n\n', goal_pos*180/pi, MOTOR_ID);
 dxlio.set_goal_position( MOTOR_ID, goal_pos );
 pause(3);

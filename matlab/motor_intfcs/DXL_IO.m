@@ -786,7 +786,7 @@ classdef DXL_IO < handle
     % Generic utilities    
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %   Convert position (encoder count to rad)
-    function [result] = pos_enc_to_rad( obj, a_enc_pos )
+    function [result] = pos_enc_to_rad( obj, a_enc_pos )    % TODO: change implementation to use ref rad & enc cnt? implement specialized version in subclass? [Note: (4095-2048)*180/2048]
       result = a_enc_pos*obj.ENC_TO_RAD;
     end
 
