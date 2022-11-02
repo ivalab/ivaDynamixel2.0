@@ -38,6 +38,7 @@ classdef DXL_IO < handle
     INSTR_REG_WRITE     = 4;
     INSTR_ACTION        = 5;
     INSTR_RESET         = 6;
+    INSTR_SYNC_READ	    = 82;
     INSTR_SYNC_WRITE	  = 83;
     
     % Dynamixel error code masks
