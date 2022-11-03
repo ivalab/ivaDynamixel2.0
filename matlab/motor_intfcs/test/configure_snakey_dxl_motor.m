@@ -12,7 +12,7 @@ PORT_BAUD = 1000000;
 MOTOR_OP_MODE = 4;  % 3 = Default Position Control Mode; 4 = Extended Position Control Mode
 MOTOR_HOMING_OFFSET = -180*pi/180;%-180*pi/180;  % rad
 
-MOTOR_IDS = 1:12;
+MOTOR_IDS = 1:8;
 % MOTOR_IDS = 12;
 
 
@@ -116,11 +116,7 @@ for ii = 1:length(MOTOR_IDS)
 %   [ cur_motor_pos ] = dxlio.get_present_position( MOTOR_ID );
 %   fprintf('Retrieved motor position: %.4f rad (%.3f deg), motor ID: %d.\n', cur_motor_pos, cur_motor_pos*180/pi, MOTOR_ID);
 %   pause(1);
-end
 
-
-% [5] == Clean-up
-for ii = 1:length(MOTOR_IDS)
   %   Disable motor torque
   torque_state = 0;
   fprintf('[Motor ID: %d] Disabling torque: %d.\n\n', MOTOR_IDS(ii), torque_state);
@@ -128,6 +124,8 @@ for ii = 1:length(MOTOR_IDS)
   pause(1);
 end
 
+
+% [5] == Clean-up
 %   Close port, unload library
 fprintf('Closing DXL port: %s.\n', PORT_NAME);
 dxlio.closePort();
