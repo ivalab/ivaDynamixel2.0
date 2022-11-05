@@ -38,10 +38,8 @@ fprintf('Pinging target motors ...\n');
 for ii = 1:length(MOTOR_IDS)
   ping_result = dxlio.pingGetModelNum( MOTOR_IDS(ii) );
   if ( ~ping_result )
-  %   fprintf('\nPing result -> no response!');
     fprintf('[not found] Motor ID: %d -> no response.\n\n', MOTOR_IDS(ii));
   else
-  %   fprintf('Ping result -> Model number: %d, for Motor ID: %d.\n\n', ping_result, MOTOR_ID);
     fprintf('[FOUND] Motor ID: %d -> Model number: %d (%s).\n\n', MOTOR_IDS(ii), ping_result, DXL_IO_Impl.MODEL_NUM2NAME(ping_result));
   end
   pause(1);
