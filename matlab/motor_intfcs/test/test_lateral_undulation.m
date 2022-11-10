@@ -14,8 +14,9 @@
 LU_CYCLES = 3;
 
 % MOTOR_IDS = 1:12;   % 1 through 12 -> tail to head
-MOTOR_IDS = 1;   % 1 through 12 -> tail to head
-JOINT_SELECT = 2; % 1 through 12 -> tail to head
+MOTOR_IDS = 1:8;   % 1 through 12 -> tail to head
+JOINT_SELECT = 2:2:8; % 1 through 12 -> tail to head
+% JOINT_SELECT = 1:2:7; % 1 through 12 -> tail to head
 
 PORT_NAME = '/dev/ttyUSB0';
 PORT_BAUD = 1000000;
@@ -63,7 +64,7 @@ for ii = 1:length(MOTOR_IDS)
   else
     fprintf('[FOUND] Motor ID: %d -> Model number: %d (%s).\n\n', MOTOR_IDS(ii), ping_result, DXL_IO_Impl.MODEL_NUM2NAME(ping_result));
   end
-  pause(1);
+  pause(0.5);
 end
 
 
@@ -74,8 +75,10 @@ input('Press <Enter> to command initial gait shape ...');
 % Motor position & velocity
 %   Enable motor torque
 torque_state = 1;
-fprintf('Enabling torque: %d, for motor ID: %d.\n\n', torque_state, JOINT_SELECT);
-dxlio.set_torque_enable( JOINT_SELECT, torque_state );
+fprintf('Enabling torque: %d, ...\n', torque_state);
+fprintf('                    for motor ID: %d.\n', JOINT_SELECT);
+fprintf('\n');
+dxlio.set_torque_enable( JOINT_SELECT, torque_state*ones(size(JOINT_SELECT)) );
 pause(1);
 
 %   Command initial gait shape
@@ -104,8 +107,10 @@ fprintf('\nCompleted gait execution.\n\n');
 
 % Disable motor torque
 torque_state = 0;
-fprintf('Disabling torque: %d, for motor ID: %d.\n\n', torque_state, JOINT_SELECT);
-dxlio.set_torque_enable( JOINT_SELECT, torque_state );
+fprintf('Disabling torque: %d, ...\n', torque_state);
+fprintf('                     for motor ID: %d.\n', JOINT_SELECT);
+fprintf('\n');
+dxlio.set_torque_enable( JOINT_SELECT, torque_state*ones(size(JOINT_SELECT)) );
 pause(1);
 
 
