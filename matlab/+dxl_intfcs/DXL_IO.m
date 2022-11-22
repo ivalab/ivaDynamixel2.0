@@ -115,7 +115,7 @@ classdef DXL_IO < handle
       end
 
       % Update Matlab path with supporting DXL scripts/libraries/headers
-      dxlio_path = which('DXL_IO');
+      dxlio_path = which('dxl_intfcs.DXL_IO');
       if ( obj.os == 0 || obj.os == 2 )      % Unix derivative or Mac OS
         [pathstr, ~, ~] = fileparts(dxlio_path);
         addpath(genpath([pathstr '/../m_basic_function']));   % Matlab wrappers

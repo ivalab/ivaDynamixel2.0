@@ -12,18 +12,18 @@ PORT_BAUD = 1000000;
 MOTOR_OP_MODE = 4;  % 3 = Default Position Control Mode; 4 = Extended Position Control Mode
 MOTOR_HOMING_OFFSET = -180*pi/180;%-180*pi/180;  % rad
 
-MOTOR_IDS = 1:8;
+MOTOR_IDS = 1:11;
 % MOTOR_IDS = 12;
 
 
 % [1] == Script setup
 %   Update Matlab path
-addpath('../');
+addpath('../../');
 
 
 % [2] == Instantiate motor interface
 %   Setup
-dxlio = XM430_W350_IO();
+dxlio = dxl_intfcs.XM430_W350_IO();
 fprintf('\n');
 
 fprintf('Loading DXL library.\n\n');
@@ -40,7 +40,7 @@ for ii = 1:length(MOTOR_IDS)
   if ( ~ping_result )
     fprintf('[not found] Motor ID: %d -> no response.\n\n', MOTOR_IDS(ii));
   else
-    fprintf('[FOUND] Motor ID: %d -> Model number: %d (%s).\n\n', MOTOR_IDS(ii), ping_result, DXL_IO_Impl.MODEL_NUM2NAME(ping_result));
+    fprintf('[FOUND] Motor ID: %d -> Model number: %d (%s).\n\n', MOTOR_IDS(ii), ping_result, dxl_intfcs.DXL_IO_Impl.MODEL_NUM2NAME(ping_result));
   end
   pause(1);
 end

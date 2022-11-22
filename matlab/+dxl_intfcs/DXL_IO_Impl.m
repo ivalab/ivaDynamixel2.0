@@ -12,7 +12,7 @@
 %              To be safe, stay on 1 million baud.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-classdef DXL_IO_Impl < DXL_IO
+classdef DXL_IO_Impl < dxl_intfcs.DXL_IO
   % This Class serves to organize the functions that command the new motors
   % Detailed explanation goes here
 
@@ -33,7 +33,7 @@ classdef DXL_IO_Impl < DXL_IO
   methods  (Access = public)
     % Constructor & initialization
     function obj = DXL_IO_Impl( a_protocol )      
-      obj@DXL_IO(); 
+      obj@dxl_intfcs.DXL_IO(); 
       
       if ( nargin > 0 )   % Set DXL comm. protocol based on user input; otherwise leave at default value
         if ( a_protocol == 1 || a_protocol == 2 )

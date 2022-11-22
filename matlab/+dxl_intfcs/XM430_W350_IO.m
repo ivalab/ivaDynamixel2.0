@@ -12,7 +12,7 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-classdef XM430_W350_IO < DXL_IO
+classdef XM430_W350_IO < dxl_intfcs.DXL_IO
   % This Class serves to organize the functions that command the new motors
   % Detailed explanation goes here
 
@@ -186,7 +186,7 @@ classdef XM430_W350_IO < DXL_IO
     % Constructor & initialization
     function obj = XM430_W350_IO()
       
-      obj@DXL_IO(); 
+      obj@dxl_intfcs.DXL_IO(); 
       
       % Motor instance configuration management (default initialization),
       % for possible motor IDs 0 - 253
