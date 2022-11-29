@@ -1,16 +1,15 @@
 % 
-% Test script: test_XM430W350_led_onoff.m
+% Test script: test_DXLIO_XM430_W350_print_info.m
 % 
 % Description: 
-%   Instantiate XM430_W350_IO motor IO class and update LED motor state.
+%   Retrieve motor information.
 % 
 
 % [0] == Script parameter(s)
-PORT_NAME = '/dev/ttyUSB0';
+PORT_NAME = '/dev/ttyUSB1';
 PORT_BAUD = 1000000;
 
-% MOTOR_IDS = 8;
-MOTOR_IDS = 2:12;
+MOTOR_IDS = [1, 2];
 
 
 % [1] == Script setup
@@ -43,22 +42,21 @@ end
 fprintf('\n');
 pause(1);
 
-%   Enable torque, set motor position, read motor position & homing offset
-%     Read present motor position
-[ cur_motor_pos ] = dxlio.get_present_position( MOTOR_IDS );
-for ii = 1:length(cur_motor_pos)
-  fprintf('Retrieved motor position: %.4f rad (%.3f deg), motor ID: %d.\n', cur_motor_pos(ii), cur_motor_pos(ii)*180/pi, MOTOR_IDS(ii));
-end
+%   Get motor shutdown configuration
+print_info = true;
+shutdown_states_str = dxlio.get_shutdown_configuration( MOTOR_IDS, print_info );
 pause(1);
+
+%   Get motor error status
+print_info = true;
+error_states_str = dxlio.get_motor_error_state( MOTOR_IDS, print_info );
+pause(1);
+
 
 %   Clean-up
 fprintf('Closing DXL port: %s.\n', PORT_NAME);
 dxlio.closePort();
 fprintf('Unloading DXL library.\n');
 dxlio.unload_library();
-
-
-
-
 
 

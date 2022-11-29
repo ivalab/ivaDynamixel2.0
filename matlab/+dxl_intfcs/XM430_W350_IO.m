@@ -414,38 +414,20 @@ classdef XM430_W350_IO < dxl_intfcs.DXL_IO
     %   result:           string summary of motor error states
     %
     %   TODO: handle comm. failures (for 1+ motor ids)
-    function [ motor_err_state_str ] = get_motor_error_state( obj, a_motor_ids, a_print_info )
+    function [ motor_err_states_str ] = get_motor_error_state( obj, a_motor_ids, a_print_info )
       if ( nargin < 3 )
         a_print_info = false;
       end
       
-      [ result_err_state ] = obj.get_hw_error_status( a_motor_ids );
+      [ result_err_states ] = obj.get_hw_error_status( a_motor_ids );
       
-      motor_err_state_str = cell(size(a_motor_ids));
-      for ii = 1:length(a_motor_ids)
-        err_flags = result_err_state(ii);
-
-        % Parse into boolean (string) outcomes
-        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_VOLTAGE)) ) err_voltage = 'TRUE'; else err_voltage = 'FALSE'; end
-        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_OVERHEAT)) ) err_overheat = 'TRUE'; else err_overheat = 'FALSE'; end
-        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_ENCODER)) ) err_encoder = 'TRUE'; else err_encoder = 'FALSE'; end
-        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_SHOCK)) ) err_shock = 'TRUE'; else err_shock = 'FALSE'; end
-        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_OVERLOAD)) ) err_overload = 'TRUE'; else err_overload = 'FALSE'; end
-        
-        % Format motor error report
-        motor_err_state_str{ii} = sprintf('Motor ID: %d \n', a_motor_ids(ii));
-        
-        motor_err_state_str{ii} = sprintf('%s\t [%s]\tInput Voltage Error\n', motor_err_state_str{ii}, err_voltage);
-        motor_err_state_str{ii} = sprintf('%s\t [%s]\tOverheating Error\n', motor_err_state_str{ii}, err_overheat);
-        motor_err_state_str{ii} = sprintf('%s\t [%s]\tMotor Encoder Error\n', motor_err_state_str{ii}, err_encoder);
-        motor_err_state_str{ii} = sprintf('%s\t [%s]\tElectrical Shock Error\n', motor_err_state_str{ii}, err_shock);
-        motor_err_state_str{ii} = sprintf('%s\t [%s]\tOverload Error[%s]\n', motor_err_state_str{ii}, err_overload);
-      end
+      [ motor_err_states_str ] = obj.error_state_to_string( result_err_states );
       
       if ( a_print_info )
-        fprintf('MOTOR ERROR STATE:\n====================\n\n');
-        for ii = 1:length(motor_err_state_str)
-          fprintf('%s\n', motor_err_state_str{ii});
+        fprintf('MOTOR ERROR STATES:\n====================\n\n');
+        for ii = 1:length(motor_err_states_str)
+          fprintf('Motor ID: %d \n', a_motor_ids(ii));
+          fprintf('%s\n', motor_err_states_str{ii});
         end
         fprintf('====================\n\n');
       end
@@ -1025,10 +1007,27 @@ classdef XM430_W350_IO < dxl_intfcs.DXL_IO
     % 
     % Output(s):
     %   result:       vector of shutdown configuration flags (8-bit flag)
-    function [ result ] = get_shutdown_configuration( obj, a_motor_ids )
+    function [ result ] = get_shutdown_configuration( obj, a_motor_ids, a_print_info )
+      if ( nargin < 3 )
+        a_print_info = false;
+      end
+
       [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_SHUTDOWN, obj.LEN_SHUTDOWN );
 
       result = groupSyncReadData;
+
+      if ( a_print_info )
+        [ motor_err_states_str ] = obj.error_state_to_string( groupSyncReadData );
+        
+        if ( a_print_info )
+          fprintf('MOTOR SHUTDOWN STATES:\n====================\n\n');
+          for ii = 1:length(motor_err_states_str)
+            fprintf('Motor ID: %d \n', a_motor_ids(ii));
+            fprintf('%s\n', motor_err_states_str{ii});
+          end
+          fprintf('====================\n\n');
+        end
+      end
     end
 
 
@@ -1660,6 +1659,26 @@ classdef XM430_W350_IO < dxl_intfcs.DXL_IO
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Helpers
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    function [ err_states_str ] = error_state_to_string( obj, a_err_state )
+      err_states_str = cell(length(a_err_state), 1);
+      for ii = 1:length(a_err_state)
+        err_flags = a_err_state(ii);
+
+        % Parse into boolean (string) outcomes
+        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_VOLTAGE)) ) err_voltage = 'Y'; else err_voltage = 'N'; end
+        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_OVERHEAT)) ) err_overheat = 'Y'; else err_overheat = 'N'; end
+        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_ENCODER)) ) err_encoder = 'Y'; else err_encoder = 'N'; end
+        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_SHOCK)) ) err_shock = 'Y'; else err_shock = 'N'; end
+        if ( bitand(uint8(err_flags), uint8(obj.ERRBIT_OVERLOAD)) ) err_overload = 'Y'; else err_overload = 'N'; end
+        
+        % Format error reports
+        err_states_str{ii} = sprintf('%s\t [%s]\tInput Voltage Error\n', err_states_str{ii}, err_voltage);
+        err_states_str{ii} = sprintf('%s\t [%s]\tOverheating Error\n', err_states_str{ii}, err_overheat);
+        err_states_str{ii} = sprintf('%s\t [%s]\tMotor Encoder Error\n', err_states_str{ii}, err_encoder);
+        err_states_str{ii} = sprintf('%s\t [%s]\tElectrical Shock Error\n', err_states_str{ii}, err_shock);
+        err_states_str{ii} = sprintf('%s\t [%s]\tOverload Error\n', err_states_str{ii}, err_overload);
+      end      
+    end
 
     function [ result ] = opmode_to_string( obj, a_opmode )
       if ( a_opmode == obj.OPMODE_CURRENT_CNTRL )

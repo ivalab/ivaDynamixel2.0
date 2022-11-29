@@ -14,12 +14,12 @@ MOTOR_IDS = [12];
 
 % [1] == Script setup
 %   Update Matlab path
-addpath('../');
+addpath('../../');
 
 
 % [2] == Instantiate & exercise base functionality
 %   Setup
-dxlio = XM430_W350_IO();
+dxlio = dxl_intfcs.XM430_W350_IO();
 fprintf('\n');
 
 fprintf('Loading DXL library.\n\n');
