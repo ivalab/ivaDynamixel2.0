@@ -35,7 +35,7 @@ classdef XM430_W350_IO < dxl_intfcs.DXL_IO
     ANGLE_MAX = 180*pi/180;         % max. achievable motor position (rad)
     ENC_BIT_LEN = 12;               % encoder count bit length
 
-    ENC_TO_RAD = 2*pi/(2^12-1);     % (rad/encoder cnts)
+    ENC_TO_RAD = 2*pi/(2^12);     % (rad/encoder cnts)
     ENC_HOME_POS = 0*180/pi;        % Encoder count offset for zero rad. position 
                                     %   (Note: motor-dependent applicability)
     
@@ -1251,7 +1251,7 @@ classdef XM430_W350_IO < dxl_intfcs.DXL_IO
       assert( (length(a_pos) == length(a_motor_ids) ), ...
               '[DXLIO_XM430_W350::set_goal_pos()]: Incompatible input vector lengths!');
 
-      pos_cnt_signed = floor(a_pos/obj.ENC_TO_RAD);
+      pos_cnt_signed = round(a_pos/obj.ENC_TO_RAD);
       pos_cnt = typecast(int32(pos_cnt_signed), 'uint32');  % convert double -> 32-bit signed int -> 32-bit unsigned int
 
       obj.groupSyncWriteAddr( a_motor_ids, pos_cnt, obj.ADDR_GOAL_POSITION, obj.LEN_GOAL_POSITION );
