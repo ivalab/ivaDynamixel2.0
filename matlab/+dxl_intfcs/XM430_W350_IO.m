@@ -1288,6 +1288,45 @@ classdef XM430_W350_IO < dxl_intfcs.DXL_IO
       result = groupSyncReadData;
     end
 
+    % Read motor position D-gain
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to configure
+    % 
+    % Output(s):
+    %   result:           vector of position D-gains
+    function [ result ] = get_position_D_gain( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_POSITION_D_GAIN, obj.LEN_POSITION_D_GAIN);
+
+      result = groupSyncReadData;
+    end
+
+    % Read motor position I-gain
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to configure
+    % 
+    % Output(s):
+    %   result:           vector of position I-gains
+    function [ result ] = get_position_I_gain( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_POSITION_I_GAIN, obj.LEN_POSITION_I_GAIN);
+
+      result = groupSyncReadData;
+    end
+
+    % Read motor position P-gain
+    %
+    % Input(s):
+    %   a_motor_ids:  vector of motor IDs to configure
+    % 
+    % Output(s):
+    %   result:           vector of position P-gains
+    function [ result ] = get_position_P_gain( obj, a_motor_ids )
+      [ groupSyncReadData ] = obj.groupSyncReadAddr( a_motor_ids, obj.ADDR_POSITION_P_GAIN, obj.LEN_POSITION_P_GAIN);
+
+      result = groupSyncReadData;
+    end
+
     % Read motor real-time tick
     %
     % Input(s):
