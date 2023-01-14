@@ -24,6 +24,8 @@ classdef DXL_IO < handle
     port_dev_name = '';
     port_baud_rate = 1;
     port_open = false;
+
+    data_log;               % struct; fields contain and organize logged runtime data [TODO: add to base class (along with getter method)???]
   end
   
   properties  (Abstract, Access = protected)
@@ -127,6 +129,21 @@ classdef DXL_IO < handle
         addpath([dxlio_path(1:base_dir_end_ind) 'c\include\dynamixel_sdk']);      % C headers
         addpath([dxlio_path(1:base_dir_end_ind) 'c\build\win64']);                % Compiled library
       end
+
+      % Data logging structure (debug utility)
+      obj.data_log = [];
+      obj.data_log.perf_meas = [];                            % struct; sub-fields contain performance (e.g. timing) measurements
+      obj.data_log.perf_meas.groupsyncwrite_createid = [];
+      obj.data_log.perf_meas.groupsyncwrite_addparam_vel_pos = [];
+      obj.data_log.perf_meas.groupsyncwrite_tx_write = [];
+      obj.data_log.perf_meas.groupsyncwrite_tx_result = [];
+      obj.data_log.perf_meas.groupsyncwrite_clearid = [];
+
+      obj.data_log.perf_meas.groupsyncreadaddr_createid = [];
+      obj.data_log.perf_meas.groupsyncreadaddr_addparam = [];
+      obj.data_log.perf_meas.groupsyncreadaddr_txrx = [];
+      obj.data_log.perf_meas.groupsyncreadaddr_getdata = [];
+      obj.data_log.perf_meas.groupsyncreadaddr_clearid = [];
     end
     
 
@@ -485,24 +502,41 @@ classdef DXL_IO < handle
     %   allow a_data_length to be array of sequenced byte lengths; one 
     %   length for each address)]
     function [ groupSyncReadData ] = groupSyncReadAddr( obj, a_motor_ids, a_start_addresss, a_data_length )
+      tic;
       group_id = obj.groupSyncRead( a_start_addresss, a_data_length );
-      
+      perf_meas_groupsyncreadaddr_createid = toc;
+
       % Add motor IDs to read group
+      tic;
       for ii = 1:length(a_motor_ids)        
         if ( ~obj.groupSyncReadAddParam( group_id, a_motor_ids(ii) ) )
           error('[ERROR] DXL_IO::groupSyncReadAddr(): motor ID failed to be added to read group (%d) ...', a_motor_ids(ii));
         end
       end
+      perf_meas_groupsyncreadaddr_addparam = toc;
       
+      tic;
       obj.groupSyncReadTxRxPacket( group_id );
+      perf_meas_groupsyncreadaddr_txrx = toc;
       
       % Retrieve read group data
+      tic;
       groupSyncReadData = zeros(size(a_motor_ids));
       for ii = 1:length(a_motor_ids)        
         groupSyncReadData(ii) = obj.groupSyncReadGetData( group_id, a_motor_ids(ii), a_start_addresss, a_data_length );
       end
-      
+      perf_meas_groupsyncreadaddr_getdata = toc;      
+
+      tic;
       obj.groupSyncReadClearParam( group_id );        % clear read group data (permits group ID re-use)
+      perf_meas_groupsyncreadaddr_clearid = toc; 
+
+      % Compile data logging
+      obj.data_log.perf_meas.groupsyncreadaddr_createid = [obj.data_log.perf_meas.groupsyncreadaddr_createid, perf_meas_groupsyncreadaddr_createid];
+      obj.data_log.perf_meas.groupsyncreadaddr_addparam = [obj.data_log.perf_meas.groupsyncreadaddr_addparam, perf_meas_groupsyncreadaddr_addparam];
+      obj.data_log.perf_meas.groupsyncreadaddr_txrx = [obj.data_log.perf_meas.groupsyncreadaddr_txrx, perf_meas_groupsyncreadaddr_txrx];
+      obj.data_log.perf_meas.groupsyncreadaddr_getdata = [obj.data_log.perf_meas.groupsyncreadaddr_getdata, perf_meas_groupsyncreadaddr_getdata];
+      obj.data_log.perf_meas.groupsyncreadaddr_clearid = [obj.data_log.perf_meas.groupsyncreadaddr_clearid, perf_meas_groupsyncreadaddr_clearid];
     end
     
     %   Create read group and initialize read group-associated structs
@@ -805,9 +839,19 @@ classdef DXL_IO < handle
     function [result] = speed_rad_to_enc( obj, a_rad_speed )    
       result = a_rad_speed/obj.ENC_TO_RAD;
     end
+
+
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Class utilities
+    % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+    % Retrieve logged runtime data
+    function result = get_data_log( obj )
+      result = obj.data_log;
+    end
   end
   
-  methods (Access=protected)
+  methods (Access = protected)
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Helpers
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
