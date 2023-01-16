@@ -502,34 +502,34 @@ classdef DXL_IO < handle
     %   allow a_data_length to be array of sequenced byte lengths; one 
     %   length for each address)]
     function [ groupSyncReadData ] = groupSyncReadAddr( obj, a_motor_ids, a_start_addresss, a_data_length )
-      tic;
+      tic_groupsyncreadaddr_createid = tic;
       group_id = obj.groupSyncRead( a_start_addresss, a_data_length );
-      perf_meas_groupsyncreadaddr_createid = toc;
+      perf_meas_groupsyncreadaddr_createid = toc(tic_groupsyncreadaddr_createid);
 
       % Add motor IDs to read group
-      tic;
+      tic_groupsyncreadaddr_addparam = tic;
       for ii = 1:length(a_motor_ids)        
         if ( ~obj.groupSyncReadAddParam( group_id, a_motor_ids(ii) ) )
           error('[ERROR] DXL_IO::groupSyncReadAddr(): motor ID failed to be added to read group (%d) ...', a_motor_ids(ii));
         end
       end
-      perf_meas_groupsyncreadaddr_addparam = toc;
+      perf_meas_groupsyncreadaddr_addparam = toc(tic_groupsyncreadaddr_addparam);
       
-      tic;
+      tic_groupsyncreadaddr_txrx = tic;
       obj.groupSyncReadTxRxPacket( group_id );
-      perf_meas_groupsyncreadaddr_txrx = toc;
+      perf_meas_groupsyncreadaddr_txrx = toc(tic_groupsyncreadaddr_txrx);
       
       % Retrieve read group data
-      tic;
+      tic_groupsyncreadaddr_getdata = tic;
       groupSyncReadData = zeros(size(a_motor_ids));
       for ii = 1:length(a_motor_ids)        
         groupSyncReadData(ii) = obj.groupSyncReadGetData( group_id, a_motor_ids(ii), a_start_addresss, a_data_length );
       end
-      perf_meas_groupsyncreadaddr_getdata = toc;      
+      perf_meas_groupsyncreadaddr_getdata = toc(tic_groupsyncreadaddr_getdata);      
 
-      tic;
+      tic_groupsyncreadaddr_clearid = tic;
       obj.groupSyncReadClearParam( group_id );        % clear read group data (permits group ID re-use)
-      perf_meas_groupsyncreadaddr_clearid = toc; 
+      perf_meas_groupsyncreadaddr_clearid = toc(tic_groupsyncreadaddr_clearid); 
 
       % Compile data logging
       obj.data_log.perf_meas.groupsyncreadaddr_createid = [obj.data_log.perf_meas.groupsyncreadaddr_createid, perf_meas_groupsyncreadaddr_createid];

@@ -1513,12 +1513,12 @@ classdef XM430_W350_IO < dxl_intfcs.DXL_IO
       assert( (length(a_pos) == length(a_motor_ids) && length(a_vel_profile) == length(a_motor_ids)), ...
               '[DXLIO_XM430_W350::set_goal_pos_vel()]: Incompatible input vector lengths!');
 
-      tic;
+      tic_groupsyncwrite_createid = tic;
       group_id = obj.groupSyncWrite( obj.ADDR_PROFILE_VELOCITY, obj.LEN_PROFILE_VELOCITY + obj.LEN_GOAL_POSITION);
-      perf_meas_groupsyncwrite_createid = toc;
+      perf_meas_groupsyncwrite_createid = toc(tic_groupsyncwrite_createid);
 
       % Add motor IDs to write group
-      tic;
+      tic_groupsyncwrite_addparam_vel_pos = tic;
       for ii = 1:length(a_motor_ids)
         % Add velocity profile to group write config.
         vel_profile_cnt = floor(a_vel_profile(ii)/(0.229*2*pi/60));
@@ -1533,23 +1533,23 @@ classdef XM430_W350_IO < dxl_intfcs.DXL_IO
           error('[DXL_IO::set_goal_pos_vel()] Motor goal position failed to be added to write group (%d) ...', a_motor_ids(ii));
         end
       end
-      perf_meas_groupsyncwrite_addparam_vel_pos = toc;
+      perf_meas_groupsyncwrite_addparam_vel_pos = toc(tic_groupsyncwrite_addparam_vel_pos);
       
-      tic;
+      tic_groupsyncwrite_tx_write = tic;
       obj.groupSyncWriteTxPacket( group_id );
-      perf_meas_groupsyncwrite_tx_write = toc;
+      perf_meas_groupsyncwrite_tx_write = toc(tic_groupsyncwrite_tx_write);
 
       % TODO: check TxRxResult (optional)?
-      tic;
+      tic_tx_result = tic;
       dxl_comm_result = obj.getLastTxRxResult();
       if dxl_comm_result ~= obj.COMM_TXSUCCESS
           warning('Comm. error: %s\n', obj.getTxRxResult(dxl_comm_result));
       end
-      perf_meas_groupsyncwrite_tx_result = toc;
+      perf_meas_groupsyncwrite_tx_result = toc(tic_tx_result);
       
-      tic;
+      tic_groupsyncwrite_clearid = tic;
       obj.groupSyncWriteClearParam( group_id );        % clear write group data (permits group ID re-use)
-      perf_meas_groupsyncwrite_clearid = toc;
+      perf_meas_groupsyncwrite_clearid = toc(tic_groupsyncwrite_clearid);
 
       % Compile data logging
       obj.data_log.perf_meas.groupsyncwrite_createid = [obj.data_log.perf_meas.groupsyncwrite_createid, perf_meas_groupsyncwrite_createid];
@@ -1610,7 +1610,7 @@ classdef XM430_W350_IO < dxl_intfcs.DXL_IO
       obj.groupSyncWriteClearParam( group_id );        % clear write group data (permits group ID re-use)
     end
 
-    
+
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Class utilities
     % %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
